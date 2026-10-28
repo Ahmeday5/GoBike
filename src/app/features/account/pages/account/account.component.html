@@ -1,0 +1,46 @@
+<div class="pgh mb-3">
+  <div>
+    <h1 class="pgt mb-0">حسابي</h1>
+    <div class="pgs">بيانات حسابك وتفضيلاتك</div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <section class="card h-100">
+      <div class="chdr"><h2 class="ct mb-0">الحساب</h2></div>
+      <dl class="row mb-0">
+        <dt class="col-4 form-label">الاسم</dt>
+        <dd class="col-8">{{ user()?.name }}</dd>
+        <dt class="col-4 form-label">البريد الإلكتروني</dt>
+        <dd class="col-8 ltr text-start">{{ user()?.email }}</dd>
+        <dt class="col-4 form-label">الدور</dt>
+        <dd class="col-8 mb-0">{{ user()?.role }}</dd>
+      </dl>
+    </section>
+  </div>
+
+  <div class="col-lg-6">
+    <section class="card h-100">
+      <div class="chdr"><h2 class="ct mb-0">المظهر</h2></div>
+      <fieldset>
+        <legend class="form-label">السمة</legend>
+        @for (opt of themeOptions; track opt.value) {
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="theme"
+              [id]="'theme-' + opt.value"
+              [checked]="theme.preference() === opt.value"
+              (change)="theme.setPreference(opt.value)"
+            />
+            <label class="form-check-label" [for]="'theme-' + opt.value">{{ opt.label }}</label>
+          </div>
+        }
+      </fieldset>
+    </section>
+  </div>
+</div>
+
+<p class="pgs mt-3">الإصدار {{ appVersion }}</p>

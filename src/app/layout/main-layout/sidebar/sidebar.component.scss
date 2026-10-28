@@ -1,0 +1,398 @@
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR — dark charcoal (from the logo), brand-red accents.
+   Desktop: docked, collapsible. Mobile: slide-in drawer.
+   ════════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sidebar {
+  --item-h: 2.875rem;
+  --pad: 0.875rem;
+
+  position: relative;
+  width: var(--sb-w);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--sb-txt);
+  /* Brand-red glow in the top corner, painted as a background layer so it can
+     never spill out when the collapsed rail turns overflow visible. */
+  background:
+    radial-gradient(260px 220px at 100% 0%, rgba(190, 50, 50, 0.32) 0%, transparent 70%),
+    var(--sb-bg);
+  border-inline-start: 1px solid var(--sb-brd);
+  transition: width var(--dur-4) var(--ease-out);
+}
+
+/* ── Brand ── */
+.sb-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-h);
+  padding-inline: var(--pad);
+  flex-shrink: 0;
+}
+
+.sb-brand__link {
+  display: block;
+  animation: fade-down var(--dur-4) var(--ease-out) both;
+}
+
+.sb-brand__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 2.875rem;
+  width: 8.25rem;
+  transition:
+    width var(--dur-4) var(--ease-out),
+    transform var(--dur-3) var(--ease-spring);
+
+  &:hover {
+    transform: scale(1.04) rotate(-1.5deg);
+  }
+}
+
+/* Wordmark and mark are stacked; the collapsed state cross-fades them. */
+.sb-brand__wordmark,
+.sb-brand__mark {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-4) var(--ease-out);
+}
+.sb-brand__mark {
+  opacity: 0;
+  transform: scale(0.6);
+  /* The "GO" letters are charcoal — give them a white tile on the dark rail. */
+  padding: 0.625rem 0.5rem;
+  background: #fff;
+  border-radius: 0.875rem;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.6);
+}
+
+.sb-close {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sb-brd);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--sb-txt);
+  cursor: pointer;
+  transition:
+    background var(--dur-2),
+    color var(--dur-2),
+    transform var(--dur-3) var(--ease-spring);
+  &:hover {
+    background: var(--sb-hover);
+    color: #fff;
+    transform: rotate(90deg);
+  }
+}
+
+/* ── Navigation ── */
+.sb-nav {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.375rem var(--pad) 1rem;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* The single gliding highlight behind the active item. */
+.sb-indicator {
+  position: absolute;
+  top: 0;
+  inset-inline: var(--pad);
+  border-radius: 0.875rem;
+  background: var(--primary-gradient);
+  box-shadow:
+    0 10px 24px -10px rgba(190, 50, 50, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition:
+    transform var(--dur-4) var(--ease-spring),
+    height var(--dur-3) var(--ease-out);
+  animation: scale-in var(--dur-3) var(--ease-out) both;
+  z-index: 0;
+}
+
+.sb-sec {
+  position: relative;
+  height: 2.125rem;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0.75rem 0.375rem;
+  font-size: 0.7188rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--sb-muted);
+  white-space: nowrap;
+  animation: fade-in var(--dur-4) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.sb-sec__rule {
+  position: absolute;
+  inset-inline: 1.375rem;
+  bottom: 0.875rem;
+  height: 1px;
+  background: var(--sb-brd);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity var(--dur-3),
+    transform var(--dur-4) var(--ease-out);
+}
+.sb-sec__label {
+  transition: opacity var(--dur-2);
+}
+
+.sbi {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--item-h);
+  margin-bottom: 0.25rem;
+  padding-inline: 0.75rem;
+  border-radius: 0.875rem;
+  color: var(--sb-txt);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  animation: slide-in-start var(--dur-4) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition:
+    color var(--dur-2),
+    background var(--dur-2),
+    padding var(--dur-4) var(--ease-out);
+
+  &:hover:not(.on) {
+    color: var(--sb-txt-strong);
+    background: var(--sb-hover);
+
+    .sbi__icon {
+      transform: translateX(-3px) scale(1.08);
+      color: var(--brand-300);
+    }
+  }
+
+  &.on {
+    color: #fff;
+    font-weight: 600;
+
+    .sbi__icon {
+      animation: pop-in 520ms var(--ease-spring);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--brand-300);
+    outline-offset: -2px;
+  }
+}
+
+.sbi__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  transition:
+    transform var(--dur-3) var(--ease-spring),
+    color var(--dur-2);
+}
+
+.sbi__label {
+  flex: 1;
+  transition:
+    opacity var(--dur-2),
+    transform var(--dur-3) var(--ease-out);
+}
+
+/* ── Profile card ── */
+.sb-user {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 var(--pad) 0.625rem;
+  padding: 0.625rem;
+  border-radius: 1rem;
+  color: inherit;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--sb-brd);
+  animation: fade-up var(--dur-4) var(--ease-out) 300ms both;
+  transition:
+    background var(--dur-2),
+    border-color var(--dur-2),
+    transform var(--dur-3) var(--ease-out),
+    padding var(--dur-4) var(--ease-out);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(217, 101, 101, 0.35);
+    transform: translateY(-2px);
+  }
+}
+
+.sb-user__avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary-gradient);
+  box-shadow: 0 6px 14px -6px rgba(190, 50, 50, 0.8);
+}
+
+.sb-user__status {
+  position: absolute;
+  inset-block-end: -2px;
+  inset-inline-end: -2px;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #1a1a1c;
+  animation: pulse-ring 2.4s ease-out infinite;
+  --primary-ring: rgba(34, 197, 94, 0.5);
+}
+
+.sb-user__meta {
+  min-width: 0;
+  display: grid;
+  line-height: 1.35;
+  transition: opacity var(--dur-2);
+
+  strong {
+    color: #fff;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  small {
+    color: var(--sb-muted);
+    font-size: var(--fs-xs);
+  }
+}
+
+.sb-version {
+  padding: 0 var(--pad) 0.875rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--sb-muted);
+  white-space: nowrap;
+  transition: opacity var(--dur-2);
+}
+
+/* ════════════ Collapsed (desktop) ════════════ */
+.sidebar.collapsed {
+  width: var(--sb-w-collapsed);
+
+  .sb-brand {
+    justify-content: center;
+  }
+  .sb-brand__tile {
+    width: 3.5rem;
+  }
+  .sb-brand__wordmark {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  .sb-brand__mark {
+    opacity: 1;
+    transform: none;
+  }
+
+  .sb-sec__label {
+    opacity: 0;
+  }
+  .sb-sec__rule {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .sbi {
+    padding-inline: calc((var(--sb-w-collapsed) - 2 * var(--pad) - 1.5rem) / 2);
+  }
+  .sbi__label,
+  .sb-user__meta,
+  .sb-version {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sbi__label {
+    transform: translateX(10px);
+  }
+  .sb-user {
+    padding: 0.3125rem;
+  }
+}
+
+/* Collapsed-rail tooltip (fixed, so the scrolling nav never clips it) */
+.sb-tip {
+  position: fixed;
+  z-index: 1300;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--r-sm);
+  background: var(--ink-900);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: sb-tip-in var(--dur-3) var(--ease-spring) both;
+}
+
+@keyframes sb-tip-in {
+  from {
+    opacity: 0;
+    transform: translate(8px, -50%);
+  }
+}
+
+/* ════════════ Mobile drawer ════════════ */
+@media (max-width: 991.98px) {
+  .sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 1200;
+    width: min(18.75rem, 86vw);
+    border-inline-start: none;
+    transform: translateX(105%);
+    transition:
+      transform var(--dur-4) var(--ease-out),
+      box-shadow var(--dur-4);
+
+    &.open {
+      transform: translateX(0);
+      box-shadow: -24px 0 48px rgba(0, 0, 0, 0.35);
+
+      .sbi {
+        animation: slide-in-start var(--dur-4) var(--ease-out) both;
+        animation-delay: calc(80ms + var(--i, 0) * 40ms);
+      }
+    }
+  }
+}

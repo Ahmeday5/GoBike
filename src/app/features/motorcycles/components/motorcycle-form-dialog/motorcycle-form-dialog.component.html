@@ -1,0 +1,147 @@
+<app-modal
+  [open]="open()"
+  [title]="motorcycle() ? 'تعديل بيانات الموتوسيكل' : 'إضافة موتوسيكل'"
+  size="lg"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <h3 class="form-section-title">البيانات الأساسية</h3>
+
+      <div>
+        <label class="form-label" for="m-plate">رقم اللوحة *</label>
+        <input id="m-plate" class="form-control" formControlName="plateNumber" autocomplete="off" />
+        <app-form-error [control]="form.controls.plateNumber" label="رقم اللوحة" />
+      </div>
+      <div>
+        <label class="form-label" for="m-code">الكود الداخلي</label>
+        <input id="m-code" class="form-control" formControlName="internalCode" autocomplete="off" />
+        <app-form-error [control]="form.controls.internalCode" label="الكود الداخلي" />
+      </div>
+      <div>
+        <label class="form-label" for="m-brand">الماركة *</label>
+        <input id="m-brand" class="form-control" formControlName="brand" />
+        <app-form-error [control]="form.controls.brand" label="الماركة" />
+      </div>
+      <div>
+        <label class="form-label" for="m-model">الموديل *</label>
+        <input id="m-model" class="form-control" formControlName="model" />
+        <app-form-error [control]="form.controls.model" label="الموديل" />
+      </div>
+      <div>
+        <label class="form-label" for="m-year">سنة الصنع</label>
+        <input
+          id="m-year"
+          type="number"
+          class="form-control"
+          formControlName="manufacturingYear"
+          min="1990"
+          [max]="maxYear"
+        />
+        <app-form-error [control]="form.controls.manufacturingYear" label="سنة الصنع" />
+      </div>
+      <div>
+        <label class="form-label" for="m-color">اللون</label>
+        <input id="m-color" class="form-control" formControlName="color" />
+      </div>
+      <div>
+        <label class="form-label" for="m-chassis">رقم الشاسيه</label>
+        <input id="m-chassis" class="form-control" formControlName="chassisNumber" dir="ltr" />
+        <app-form-error [control]="form.controls.chassisNumber" label="رقم الشاسيه" />
+      </div>
+      <div>
+        <label class="form-label" for="m-engine">رقم الموتور</label>
+        <input id="m-engine" class="form-control" formControlName="engineNumber" dir="ltr" />
+        <app-form-error [control]="form.controls.engineNumber" label="رقم الموتور" />
+      </div>
+
+      <h3 class="form-section-title">الشراء والتجهيز (ج.م)</h3>
+
+      <div>
+        <label class="form-label" for="m-pdate">تاريخ الشراء</label>
+        <input id="m-pdate" type="date" class="form-control" formControlName="purchaseDate" />
+      </div>
+      <div>
+        <label class="form-label" for="m-price">سعر الشراء *</label>
+        <input
+          id="m-price"
+          type="number"
+          class="form-control"
+          formControlName="purchasePrice"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.purchasePrice" label="سعر الشراء" />
+      </div>
+      <div>
+        <label class="form-label" for="m-prep">تكلفة التجهيز *</label>
+        <input
+          id="m-prep"
+          type="number"
+          class="form-control"
+          formControlName="preparationCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.preparationCost" label="تكلفة التجهيز" />
+      </div>
+      <div>
+        <label class="form-label" for="m-equip">تكلفة المعدات *</label>
+        <input
+          id="m-equip"
+          type="number"
+          class="form-control"
+          formControlName="equipmentCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.equipmentCost" label="تكلفة المعدات" />
+      </div>
+
+      <h3 class="form-section-title">التشغيل</h3>
+
+      <div>
+        <label class="form-label" for="m-office">المكتب *</label>
+        <select id="m-office" class="form-select" formControlName="officeId">
+          <option value="" disabled>اختر المكتب</option>
+          @for (o of offices(); track o.id) {
+            <option [value]="o.id">{{ o.name }}</option>
+          }
+        </select>
+        <app-form-error [control]="form.controls.officeId" label="المكتب" />
+      </div>
+      <div>
+        <label class="form-label" for="m-sup">المشرف</label>
+        <select id="m-sup" class="form-select" formControlName="supervisorUserId">
+          <option value="">بدون مشرف</option>
+          @for (u of staff(); track u.id) {
+            <option [value]="u.id">{{ u.fullName }}</option>
+          }
+        </select>
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="m-policy">سياسة تغيير الزيت</label>
+        <select id="m-policy" class="form-select" formControlName="maintenancePolicyId">
+          <option value="">السياسة الافتراضية</option>
+          @for (p of policies(); track p.id) {
+            <option [value]="p.id">{{ p.name }}{{ p.isDefault ? ' (الافتراضية)' : '' }}</option>
+          }
+        </select>
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="m-notes">ملاحظات</label>
+        <textarea id="m-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        {{ motorcycle() ? 'حفظ التعديلات' : 'إضافة' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

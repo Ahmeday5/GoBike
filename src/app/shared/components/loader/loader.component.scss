@@ -1,0 +1,37 @@
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.3);
+  z-index: 9999;
+  backdrop-filter: blur(3px);
+  animation: fade-in var(--dur-2) var(--ease-out) both;
+}
+
+.loader-spinner {
+  background: var(--bg2);
+  border-radius: var(--rl);
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow-lg);
+  animation: scale-in var(--dur-3) var(--ease-spring) both;
+}
+
+.spinner-ring {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid var(--primary-soft-2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.loader-text {
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

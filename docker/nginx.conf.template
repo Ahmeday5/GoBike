@@ -1,0 +1,45 @@
+# Rendered by the nginx image's envsubst step: only defined env vars
+# (e.g. CSP_CONNECT_SRC) are replaced; nginx's own $vars are left alone.
+#
+# Caching uses `expires` (not `add_header`) on purpose: any `add_header`
+# inside a location would silently drop the security headers below.
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  server_tokens off;
+
+  gzip on;
+  gzip_comp_level 6;
+  gzip_min_length 1024;
+  gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+  # The sha256 must match the inline theme script in src/index.html.
+  # `src/csp.spec.ts` fails the test run if they drift apart.
+  add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-nPmpuR7zwe5Ki/56hArQQqSWd3ZMsvmaSuE19DZHnz8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com; media-src 'self' blob:; font-src 'self' data:; connect-src ${CSP_CONNECT_SRC}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "DENY" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+  location = /healthz {
+    access_log off;
+    default_type text/plain;
+    return 200 "ok";
+  }
+
+  # Hashed bundles (main-XXXX.js, chunk-XXXX.js, styles-XXXX.css) never change.
+  location ~* "-[A-Z0-9]{8}\.(?:js|css)$" {
+    expires max;
+    try_files $uri =404;
+  }
+
+  # Everything else (index.html via the SPA fallback, config.json, favicon)
+  # must be revalidated so a new deploy is picked up immediately.
+  location / {
+    expires -1;
+    try_files $uri $uri/ /index.html;
+  }
+}

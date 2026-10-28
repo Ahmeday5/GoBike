@@ -1,0 +1,55 @@
+<header class="topbar">
+  <div class="tb-start">
+    <button
+      type="button"
+      class="tb-icon-btn tb-toggle"
+      [class.tb-toggle--collapsed]="layout.collapsed() && !layout.isMobile()"
+      (click)="layout.toggleSidebar()"
+      [attr.aria-label]="toggleLabel()"
+      [title]="toggleLabel()"
+      [attr.aria-expanded]="layout.isMobile() ? layout.mobileOpen() : !layout.collapsed()"
+    >
+      <app-icon [name]="layout.isMobile() ? 'menu' : 'sidebar'" [size]="20" />
+    </button>
+
+    <div class="tb-heading">
+      <nav class="tb-crumbs" aria-label="مسار التنقل">
+        <span>{{ appName }}</span>
+        <span class="tb-crumbs__sep" aria-hidden="true">/</span>
+        <span class="tb-crumbs__current">{{ titleKey()[0] }}</span>
+      </nav>
+      @for (title of titleKey(); track title) {
+        <div class="tb-title">{{ title }}</div>
+      }
+    </div>
+  </div>
+
+  <div class="tb-end">
+    <span class="tb-date">
+      <app-icon name="calendar" [size]="16" />
+      {{ today }}
+    </span>
+
+    @if (hubStatus() !== 'disconnected') {
+      <span
+        class="tb-live"
+        [class.tb-live--down]="hubStatus() !== 'connected'"
+        [title]="
+          hubStatus() === 'connected'
+            ? 'التحديثات المباشرة تعمل'
+            : 'جارٍ إعادة الاتصال بالتحديثات المباشرة'
+        "
+      >
+        <span class="tb-live__dot" aria-hidden="true"></span>
+        {{ hubStatus() === 'connected' ? 'مباشر' : 'إعادة الاتصال' }}
+      </span>
+    }
+
+    <app-notification-bell />
+    <app-theme-toggle />
+
+    <span class="tb-divider" aria-hidden="true"></span>
+
+    <app-user-menu />
+  </div>
+</header>

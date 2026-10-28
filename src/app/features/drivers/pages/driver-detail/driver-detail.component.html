@@ -1,0 +1,259 @@
+@if (notFound()) {
+  <app-page-header title="ملف السائق" [backLink]="listLink" />
+  <div class="panel">
+    <app-empty-state
+      icon="user"
+      title="السائق غير موجود"
+      text="ربما حُذف هذا السائق أو يتبع مكتبًا آخر."
+    />
+  </div>
+} @else {
+  <app-page-header
+    [title]="driver()?.fullName ?? 'ملف السائق'"
+    [subtitle]="driver() ? 'ملف السائق' : ''"
+    [backLink]="canReadDriver() ? listLink : null"
+  >
+    @if (driver(); as d) {
+      <div class="dd-actions no-print" *appHasPermission="P.Drivers.Manage">
+        <button type="button" class="btn" (click)="editOpen.set(true)">
+          <app-icon name="edit" [size]="16" />
+          تعديل
+        </button>
+        <button type="button" class="btn" (click)="statusOpen.set(true)">
+          <app-icon name="shield" [size]="16" />
+          تغيير الحالة
+        </button>
+        @if (d.hasAppAccess) {
+          <button type="button" class="btn" (click)="resetPassword()">
+            <app-icon name="key" [size]="16" />
+            تعيين كلمة مرور
+          </button>
+        } @else {
+          <button type="button" class="btn btn-brand" (click)="passwordMode.set('account')">
+            <app-icon name="phone" [size]="16" />
+            إنشاء حساب التطبيق
+          </button>
+        }
+        <button type="button" class="btn btn-ghost dd-actions__danger" (click)="remove()">
+          <app-icon name="trash" [size]="16" />
+          حذف
+        </button>
+      </div>
+    }
+  </app-page-header>
+
+  @if (canReadDriver()) {
+    @if (driverRes.initialLoading()) {
+      <div class="panel dd-hero" aria-busy="true">
+        <span class="skeleton dd-hero__avatar"></span>
+        <div class="dd-hero__body">
+          <span class="skeleton" style="width: 12rem; height: 1.25rem"></span>
+          <span class="skeleton" style="width: 20rem; max-width: 100%; height: 0.875rem"></span>
+          <span class="skeleton" style="width: 16rem; max-width: 100%; height: 0.875rem"></span>
+        </div>
+      </div>
+    } @else if (loadFailed()) {
+      <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+        <span>{{ driverRes.error()?.message }}</span>
+        <button type="button" class="btn btn-sm" (click)="driverRes.reload()">إعادة المحاولة</button>
+      </div>
+    } @else if (driver(); as d) {
+      <section class="panel dd-hero" [class.dd-hero--off]="d.status !== 'Active'">
+        <span class="dd-hero__avatar" aria-hidden="true">{{ d.fullName.charAt(0) }}</span>
+        <div class="dd-hero__body">
+          <div class="dd-hero__chips">
+            <app-enum-chip [map]="STATUS" [value]="d.status" />
+            @if (d.hasAppAccess) {
+              <app-chip tone="success" icon="key">لديه دخول للتطبيق</app-chip>
+            } @else {
+              <app-chip tone="neutral" icon="lock">بدون حساب تطبيق</app-chip>
+            }
+            @if (d.hasPushDevice) {
+              <app-chip tone="info" icon="bell">الإشعارات مفعّلة</app-chip>
+            } @else {
+              <span title="لم يسجّل الدخول إلى التطبيق بعد، فلن تصله الإشعارات">
+                <app-chip tone="neutral" icon="minus-circle">الإشعارات متوقفة</app-chip>
+              </span>
+            }
+            @if (d.hasActiveAssignment) {
+              <app-chip tone="info" icon="bike">معه موتوسيكل الآن</app-chip>
+            }
+          </div>
+          @if (d.statusReason) {
+            <p class="dd-hero__reason">
+              <app-icon name="info" [size]="14" />
+              <span>سبب الحالة: {{ d.statusReason }}</span>
+            </p>
+          }
+          <ul class="dd-hero__meta">
+            <li>
+              <app-icon name="phone" [size]="14" /><span class="ltr">{{ d.phoneNumber }}</span>
+            </li>
+            <li><app-icon name="building" [size]="14" />{{ d.officeName ?? '—' }}</li>
+            <li>
+              <app-icon name="logout" [size]="14" />
+              آخر دخول:
+              {{ d.lastLoginAtUtc ? (d.lastLoginAtUtc | cairoDate: 'relative') : 'لم يدخل بعد' }}
+            </li>
+            <li>
+              <app-icon name="clock" [size]="14" />
+              آخر ظهور في التطبيق:
+              {{ d.lastAppSeenAtUtc ? (d.lastAppSeenAtUtc | cairoDate: 'relative') : '—' }}
+            </li>
+          </ul>
+        </div>
+      </section>
+    }
+  }
+
+  <app-tabs class="no-print" [tabs]="tabs()" [active]="activeTab()" (activeChange)="setTab($event)" />
+
+  <div class="dd-tab">
+    @switch (activeTab()) {
+      @case ('info') {
+        @if (driver(); as d) {
+          <div class="dd-grid">
+            <section class="panel" style="--i: 0">
+              <header class="panel__head">
+                <h2 class="panel__title"><app-icon name="user" [size]="18" />البيانات الشخصية</h2>
+              </header>
+              <dl class="kv">
+                <div>
+                  <dt>الاسم الكامل</dt>
+                  <dd>{{ d.fullName }}</dd>
+                </div>
+                <div>
+                  <dt>رقم الهاتف</dt>
+                  <dd class="ltr">{{ d.phoneNumber }}</dd>
+                </div>
+                <div>
+                  <dt>الرقم القومي</dt>
+                  <dd class="ltr">{{ d.nationalId || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>العنوان</dt>
+                  <dd>{{ d.address || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>رقم الرخصة</dt>
+                  <dd class="ltr">{{ d.licenseNumber || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>انتهاء الرخصة</dt>
+                  <dd><app-license-expiry [date]="d.licenseExpiryDate" /></dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel" style="--i: 1">
+              <header class="panel__head">
+                <h2 class="panel__title"><app-icon name="building" [size]="18" />التشغيل</h2>
+              </header>
+              <dl class="kv">
+                <div>
+                  <dt>المكتب</dt>
+                  <dd>{{ d.officeName ?? '—' }}</dd>
+                </div>
+                <div>
+                  <dt>المشرف</dt>
+                  <dd>{{ d.supervisorName || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>الحالة</dt>
+                  <dd><app-enum-chip [map]="STATUS" [value]="d.status" [small]="true" /></dd>
+                </div>
+                <div>
+                  <dt>تاريخ الإضافة</dt>
+                  <dd>{{ d.createdAtUtc | cairoDate: 'date' }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="panel" style="--i: 2">
+              <header class="panel__head">
+                <h2 class="panel__title"><app-icon name="phone" [size]="18" />حساب التطبيق</h2>
+              </header>
+              <dl class="kv">
+                <div>
+                  <dt>الدخول</dt>
+                  <dd>
+                    @if (d.hasAppAccess) {
+                      <app-chip tone="success" icon="key" [small]="true">مفعّل</app-chip>
+                    } @else {
+                      <app-chip tone="neutral" icon="lock" [small]="true">لا يوجد حساب</app-chip>
+                    }
+                  </dd>
+                </div>
+                <div>
+                  <dt>اسم المستخدم</dt>
+                  <dd class="ltr">{{ d.hasAppAccess ? d.phoneNumber : '—' }}</dd>
+                </div>
+                <div>
+                  <dt>آخر دخول</dt>
+                  <dd>{{ d.lastLoginAtUtc | cairoDate }}</dd>
+                </div>
+                <div>
+                  <dt>آخر ظهور</dt>
+                  <dd>{{ d.lastAppSeenAtUtc | cairoDate }}</dd>
+                </div>
+                <div>
+                  <dt>الإشعارات</dt>
+                  <dd>
+                    @if (d.hasPushDevice) {
+                      <app-chip tone="info" icon="bell" [small]="true">مفعّلة</app-chip>
+                    } @else {
+                      <app-chip tone="neutral" icon="minus-circle" [small]="true">
+                        متوقفة — لم يدخل التطبيق بعد
+                      </app-chip>
+                    }
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+        }
+      }
+      @case ('rentals') {
+        <app-driver-rentals-tab [driverId]="id()" />
+      }
+      @case ('documents') {
+        <section class="panel">
+          <app-documents-panel ownerType="Driver" [ownerId]="id()" />
+        </section>
+      }
+      @case ('account') {
+        <app-driver-account-tab [driverId]="id()" [driverName]="driver()?.fullName ?? null" />
+      }
+      @case ('oil') {
+        <app-driver-oil-tab [driverId]="id()" />
+      }
+    }
+  </div>
+}
+
+<app-driver-form-dialog
+  [open]="editOpen()"
+  [driver]="driver()"
+  (closed)="editOpen.set(false)"
+  (saved)="onSaved()"
+/>
+<app-driver-status-dialog
+  [open]="statusOpen()"
+  [driver]="driver()"
+  (closed)="statusOpen.set(false)"
+  (saved)="onSaved()"
+/>
+<app-driver-password-dialog
+  [open]="!!passwordMode()"
+  [mode]="passwordMode() ?? 'reset'"
+  [driver]="driver()"
+  (closed)="passwordMode.set(null)"
+  (done)="onCredentials($event)"
+/>
+<app-credentials-dialog
+  [open]="!!credentials()"
+  [credentials]="credentials()"
+  [driverName]="driver()?.fullName"
+  [title]="credentialsTitle()"
+  (closed)="credentials.set(null)"
+/>

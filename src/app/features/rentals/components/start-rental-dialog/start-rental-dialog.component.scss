@@ -1,0 +1,33 @@
+.rental-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--primary-soft-2);
+  border-radius: var(--rl);
+  background: var(--primary-soft);
+}
+.rental-summary__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+
+  app-icon {
+    flex-shrink: 0;
+    color: var(--primary);
+  }
+  div {
+    display: grid;
+    min-width: 0;
+  }
+  .muted {
+    font-size: var(--fs-xs);
+  }
+  strong {
+    font-size: var(--fs-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

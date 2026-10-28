@@ -1,0 +1,246 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.auth-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(26.25rem, 1fr) minmax(0, 1.08fr);
+  min-height: 0;
+  /* Same surface as <body> in both themes, so the page reads as one color. */
+  background: var(--bg);
+
+  @media (max-width: 991px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════ Form side ══════════════ */
+.auth-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.75rem clamp(1.25rem, 5vw, 4rem);
+}
+
+.auth-main__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: fade-down var(--dur-4) var(--ease-out) both;
+}
+
+/* The big logo lives in the hero on desktop; keep only the toggle there. */
+.auth-main__logo {
+  @media (min-width: 992px) {
+    visibility: hidden;
+  }
+}
+
+.auth-main__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 2rem;
+}
+
+.auth-main__footer {
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--txt3);
+  animation: fade-in var(--dur-4) var(--ease-out) 400ms both;
+}
+
+/* ══════════════ Brand side ══════════════ */
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.875rem;
+  border-radius: 1.75rem;
+  color: #fff;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(190, 50, 50, 0.55) 0%, transparent 55%),
+    linear-gradient(160deg, #2d2d2f 0%, #1c1c1e 55%, #121213 100%);
+  box-shadow: var(--shadow-lg);
+  animation: scale-in var(--dur-4) var(--ease-out) both;
+
+  @media (max-width: 991px) {
+    display: none;
+  }
+}
+
+/* Soft brand-colored light blobs drifting in the background */
+.hero__blob {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: blob-drift 18s ease-in-out infinite alternate;
+
+  &--1 {
+    width: 21.25rem;
+    height: 21.25rem;
+    background: #be3232;
+    top: -5rem;
+    inset-inline-end: -3.75rem;
+  }
+  &--2 {
+    width: 16.25rem;
+    height: 16.25rem;
+    background: #d96565;
+    bottom: 3.75rem;
+    inset-inline-start: -5rem;
+    animation-duration: 22s;
+    animation-delay: -6s;
+    opacity: 0.35;
+  }
+  &--3 {
+    width: 12.5rem;
+    height: 12.5rem;
+    background: #6a1c1c;
+    top: 40%;
+    inset-inline-start: 40%;
+    animation-duration: 26s;
+    animation-delay: -12s;
+    opacity: 0.45;
+  }
+}
+
+@keyframes blob-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, 30px) scale(1.15);
+  }
+  100% {
+    transform: translate(-30px, -20px) scale(0.92);
+  }
+}
+
+/* Subtle dotted grid, faded toward the edges */
+.hero__grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+/* ── Motorcycle scene (see motorcycle-scene component) ── */
+.hero__scene {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  bottom: 0;
+  height: 46%;
+  opacity: 0.95;
+}
+
+/* ── Copy ── */
+.hero__content {
+  position: relative;
+  max-width: 27.5rem;
+  padding: 3rem 2.5rem 30%;
+  text-align: center;
+}
+
+.hero__logo-card {
+  display: inline-flex;
+  padding: 0.625rem 1.125rem;
+  margin-bottom: 1.875rem;
+  border-radius: 1.375rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  animation:
+    pop-in 700ms var(--ease-spring) 150ms both,
+    float 6s ease-in-out 1s infinite;
+}
+
+.hero__title {
+  color: #fff;
+  font-size: clamp(1.625rem, 2.6vw, 2.125rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  animation: fade-up var(--dur-4) var(--ease-out) 250ms both;
+}
+
+.hero__text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--fs-md);
+  margin-bottom: 1.875rem;
+  animation: fade-up var(--dur-4) var(--ease-out) 350ms both;
+}
+
+.hero__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+  text-align: start;
+}
+
+.hero__item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  animation: slide-in-start var(--dur-4) var(--ease-out) both;
+  animation-delay: calc(500ms + var(--i) * 120ms);
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    background var(--dur-3),
+    border-color var(--dur-3);
+
+  &:hover {
+    transform: translateX(-6px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(217, 101, 101, 0.35);
+
+    .hero__item-icon {
+      transform: rotate(-8deg) scale(1.08);
+    }
+  }
+
+  strong {
+    display: block;
+    font-size: var(--fs-base);
+    font-weight: 600;
+  }
+  small {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: var(--fs-sm);
+  }
+}
+
+.hero__item-icon {
+  flex-shrink: 0;
+  width: 2.625rem;
+  height: 2.625rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  color: #fff;
+  background: linear-gradient(135deg, #d43c3c, #872222);
+  box-shadow: 0 8px 18px -8px rgba(190, 50, 50, 0.8);
+  transition: transform var(--dur-3) var(--ease-spring);
+}

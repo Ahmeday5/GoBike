@@ -1,0 +1,165 @@
+<app-modal
+  [open]="open()"
+  [title]="outcome() ? 'تم تسجيل الاستلام' : 'استلام الموتوسيكل وفحصها'"
+  size="lg"
+  (closed)="closed.emit()"
+>
+  @if (outcome(); as o) {
+    <div class="rr-done" [class.rr-done--faults]="o.result === 'HasFaults'">
+      <span class="rr-done__icon">
+        <app-icon [name]="o.result === 'HasFaults' ? 'alert' : 'check-circle'" [size]="36" />
+      </span>
+      @if (o.result === 'HasFaults') {
+        <h3 class="rr-done__title">الموتوسيكل الآن في الحالة الحمراء</h3>
+        <p class="rr-done__text">
+          تم إنهاء الإيجار وفتح سجل إصلاح في طابور الفني. ستعود الموتوسيكل خضراء بعد أن يُنهي
+          الفني الإصلاح ويعتمده المشرف.
+        </p>
+      } @else {
+        <h3 class="rr-done__title">الموتوسيكل سليمة ومتاحة للتأجير</h3>
+        <p class="rr-done__text">تم إنهاء الإيجار وأصبحت الموتوسيكل خضراء ومتاحة فورًا.</p>
+      }
+      <div class="rr-done__actions">
+        @if (repairLink(); as link) {
+          <a class="btn btn-re" [routerLink]="link">
+            <app-icon name="wrench" [size]="14" />
+            فتح سجل الإصلاح
+          </a>
+        }
+        @if (inspectionLink(); as link) {
+          <a class="btn" [routerLink]="link">
+            <app-icon name="search" [size]="14" />
+            عرض تقرير الفحص
+          </a>
+        }
+        <button type="button" class="btn btn-brand" (click)="closed.emit()">تم</button>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (rental(); as r) {
+        <div class="rr-head">
+          <span><app-icon name="bike" [size]="16" /> <strong class="ltr">{{ r.plateNumber ?? '—' }}</strong></span>
+          <span><app-icon name="user" [size]="16" /> {{ r.driverName ?? '—' }}</span>
+        </div>
+      }
+
+      <fieldset class="rr-toggle" role="radiogroup" aria-label="نتيجة الفحص">
+        <legend class="form-label">نتيجة الفحص *</legend>
+        <label class="rr-option rr-option--ok" [class.rr-option--active]="result() === 'Ok'">
+          <input
+            type="radio"
+            class="visually-hidden"
+            name="rr-result"
+            value="Ok"
+            [checked]="result() === 'Ok'"
+            (change)="setResult('Ok')"
+          />
+          <span class="rr-option__icon"><app-icon name="check-circle" [size]="28" /></span>
+          <span class="rr-option__title">سليمة ✓</span>
+          <span class="rr-option__sub">لا توجد أعطال — تعود متاحة فورًا</span>
+        </label>
+        <label
+          class="rr-option rr-option--faults"
+          [class.rr-option--active]="result() === 'HasFaults'"
+        >
+          <input
+            type="radio"
+            class="visually-hidden"
+            name="rr-result"
+            value="HasFaults"
+            [checked]="result() === 'HasFaults'"
+            (change)="setResult('HasFaults')"
+          />
+          <span class="rr-option__icon"><app-icon name="alert" [size]="28" /></span>
+          <span class="rr-option__title">بها أعطال ⚠</span>
+          <span class="rr-option__sub">تُحوَّل للإصلاح وتبقى حمراء حتى الاعتماد</span>
+        </label>
+      </fieldset>
+      @if (submitted() && form.controls.result.invalid) {
+        <div class="invalid-feedback d-block">اختر نتيجة الفحص</div>
+      }
+
+      @if (result()) {
+        <div
+          class="rr-effect anim-fade-up"
+          [class.rr-effect--faults]="result() === 'HasFaults'"
+          role="note"
+        >
+          <app-icon [name]="result() === 'HasFaults' ? 'alert' : 'info'" [size]="18" />
+          @if (result() === 'HasFaults') {
+            <span>
+              عند الحفظ: يُنهى الإيجار، تتحول الموتوسيكل إلى <strong>الحالة الحمراء</strong>، ويُفتح
+              <strong>سجل إصلاح</strong> في طابور الفني. لن تعود متاحة إلا بعد اعتماد المشرف.
+            </span>
+          } @else {
+            <span>
+              عند الحفظ: يُنهى الإيجار وتصبح الموتوسيكل <strong>خضراء ومتاحة للتأجير</strong> فورًا.
+            </span>
+          }
+        </div>
+      }
+
+      @if (result() === 'HasFaults') {
+        <div class="rr-faults anim-fade-up">
+          <div>
+            <label class="form-label" for="rr-summary">ملخص الأعطال</label>
+            <textarea
+              id="rr-summary"
+              class="form-control"
+              rows="2"
+              formControlName="faultSummary"
+              placeholder="وصف عام لحالة الموتوسيكل عند الاستلام"
+            ></textarea>
+            <app-form-error [control]="form.controls.faultSummary" label="ملخص الأعطال" />
+          </div>
+
+          <div>
+            <span class="form-label d-block">قائمة الأعطال</span>
+            <app-faults-editor
+              [faults]="form.controls.faults"
+              idPrefix="rr-fault"
+              emptyHint="أضف عطلًا واحدًا على الأقل أو اكتب ملخصًا للأعطال."
+            />
+          </div>
+
+          @if (submitted() && faultsMissing()) {
+            <div class="rr-missing" role="alert">
+              <app-icon name="alert" [size]="16" />
+              أضف عطلًا واحدًا على الأقل أو اكتب ملخصًا للأعطال.
+            </div>
+          }
+        </div>
+      }
+
+      <div class="form-grid mt-3">
+        <div>
+          <label class="form-label" for="rr-at">وقت الاستلام *</label>
+          <input id="rr-at" type="datetime-local" class="form-control" formControlName="returnedAt" />
+          <div class="form-hint">بتوقيت القاهرة.</div>
+          <app-form-error [control]="form.controls.returnedAt" label="وقت الاستلام" />
+        </div>
+        <div>
+          <label class="form-label" for="rr-notes">ملاحظات</label>
+          <input id="rr-notes" class="form-control" formControlName="notes" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+        <button
+          type="submit"
+          class="btn"
+          [class.btn-re]="result() === 'HasFaults'"
+          [class.btn-brand]="result() !== 'HasFaults'"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          {{ result() === 'HasFaults' ? 'تسجيل الاستلام بأعطال' : 'تسجيل الاستلام' }}
+        </button>
+      </div>
+    </form>
+  }
+</app-modal>

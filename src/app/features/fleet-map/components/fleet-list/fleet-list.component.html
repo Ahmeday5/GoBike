@@ -1,0 +1,97 @@
+<div class="fl">
+  <div class="fl__head">
+    <div class="fl__tabs" role="tablist" aria-label="قوائم الموتوسيكلات">
+      <button
+        type="button"
+        role="tab"
+        class="fl__tab"
+        [class.fl__tab--active]="tab() === 'placed'"
+        [attr.aria-selected]="tab() === 'placed'"
+        (click)="tab.set('placed')"
+      >
+        <app-icon name="map-pin" [size]="14" />
+        على الخريطة
+        <span class="fl__count">{{ placed().length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="fl__tab"
+        [class.fl__tab--active]="tab() === 'unplaced'"
+        [attr.aria-selected]="tab() === 'unplaced'"
+        (click)="tab.set('unplaced')"
+      >
+        <app-icon name="wifi-off" [size]="14" />
+        بدون موقع
+        <span class="fl__count" [class.fl__count--warn]="unplaced().length > 0">{{
+          unplaced().length
+        }}</span>
+      </button>
+    </div>
+    <button type="button" class="fl__close" aria-label="إغلاق القائمة" (click)="closed.emit()">
+      <app-icon name="close" [size]="16" />
+    </button>
+  </div>
+
+  <app-search-input
+    class="fl__search"
+    [value]="search()"
+    (valueChange)="search.set($event)"
+    placeholder="ابحث باللوحة أو السائق…"
+  />
+
+  @if (tab() === 'unplaced') {
+    <p class="fl__hint">
+      <app-icon name="info" [size]="14" />
+      موتوسيكلات بلا جهاز تتبع أو لم يصل منها موقع بعد — اضغط لفتح صفحتها.
+    </p>
+  }
+
+  <div class="fl__list">
+    @if (loading() && placed().length + unplaced().length === 0) {
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="fl__skeleton skeleton" aria-hidden="true"></div>
+      }
+    } @else {
+      @for (m of rows(); track m.motorcycleId; let i = $index) {
+        <button
+          type="button"
+          class="fl__item"
+          [class.fl__item--red]="m.health === 'Red'"
+          [class.fl__item--stale]="isOffline(m)"
+          [style.--i]="i < 12 ? i : 12"
+          (click)="pick(m)"
+        >
+          <span class="fl__dot" aria-hidden="true">
+            <app-icon [name]="m.health === 'Red' ? 'alert' : 'check-circle'" [size]="14" />
+          </span>
+          <span class="fl__main">
+            <span class="fl__plate ltr">{{ m.plateNumber }}</span>
+            <span class="fl__sub">
+              {{ m.driverName || ([m.brand, m.model].join(' ').trim() || '—') }}
+            </span>
+          </span>
+          <span class="fl__meta">
+            <app-enum-chip [map]="STATUS" [value]="m.status" [small]="true" />
+            @if (tab() === 'placed') {
+              <span class="fl__time">{{ m.lastGpsAtUtc | cairoDate: 'relative' }}</span>
+            } @else {
+              <span class="fl__time">{{ m.hasTracker ? 'لا يوجد موقع' : 'بدون جهاز تتبع' }}</span>
+            }
+          </span>
+          @if (m.openIncidents > 0 || m.isOutOfZone) {
+            <span class="fl__badge" [attr.aria-label]="'تنبيهات مفتوحة'">
+              {{ m.openIncidents > 0 ? m.openIncidents : '!' }}
+            </span>
+          }
+        </button>
+      } @empty {
+        <app-empty-state
+          [icon]="search() ? 'search' : 'bike'"
+          [title]="search() ? 'لا توجد نتائج' : tab() === 'placed' ? 'لا توجد موتوسيكلات على الخريطة' : 'كل الموتوسيكلات لها موقع'"
+          [text]="search() ? 'جرّب رقم لوحة أو اسم سائق آخر' : ''"
+        />
+      }
+    }
+  </div>
+</div>

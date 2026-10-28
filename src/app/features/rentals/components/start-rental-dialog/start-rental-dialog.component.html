@@ -1,0 +1,144 @@
+<app-modal [open]="open()" title="بدء إيجار جديد" size="lg" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <h3 class="form-section-title">الموتوسيكل والسائق</h3>
+
+      <div>
+        <label class="form-label" for="sr-moto">الموتوسيكل *</label>
+        <app-remote-picker
+          inputId="sr-moto"
+          formControlName="motorcycleId"
+          icon="bike"
+          placeholder="اختر موتوسيكل متاحًا"
+          searchPlaceholder="ابحث برقم اللوحة أو الماركة…"
+          [search]="searchMotorcycles"
+          [invalid]="form.controls.motorcycleId.invalid && form.controls.motorcycleId.touched"
+          (picked)="onMotorcycle($event)"
+        />
+        <div class="form-hint">تظهر الموتوسيكلات المتاحة فقط.</div>
+        <app-form-error [control]="form.controls.motorcycleId" label="الموتوسيكل" />
+      </div>
+      <div>
+        <label class="form-label" for="sr-driver">السائق *</label>
+        <app-remote-picker
+          inputId="sr-driver"
+          formControlName="driverId"
+          icon="user"
+          placeholder="اختر السائق"
+          searchPlaceholder="ابحث بالاسم أو رقم الهاتف…"
+          [search]="searchDrivers"
+          [invalid]="form.controls.driverId.invalid && form.controls.driverId.touched"
+          (picked)="onDriver($event)"
+        />
+        <app-form-error [control]="form.controls.driverId" label="السائق" />
+      </div>
+
+      <div>
+        <label class="form-label" for="sr-start">بداية الإيجار *</label>
+        <input id="sr-start" type="datetime-local" class="form-control" formControlName="startAt" />
+        <div class="form-hint">بتوقيت القاهرة.</div>
+        <app-form-error [control]="form.controls.startAt" label="بداية الإيجار" />
+      </div>
+      <div>
+        <label class="form-label" for="sr-contract">رقم العقد</label>
+        <input
+          id="sr-contract"
+          class="form-control"
+          formControlName="contractNumber"
+          dir="ltr"
+          autocomplete="off"
+        />
+        <app-form-error [control]="form.controls.contractNumber" label="رقم العقد" />
+      </div>
+
+      <h3 class="form-section-title">القيمة المالية (ج.م)</h3>
+
+      <div>
+        <label class="form-label" for="sr-amount">قيمة الإيجار *</label>
+        <input
+          id="sr-amount"
+          type="number"
+          class="form-control"
+          formControlName="rentAmount"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.rentAmount" label="قيمة الإيجار" />
+      </div>
+      <div>
+        <label class="form-label" for="sr-period">فترة الإيجار *</label>
+        <select id="sr-period" class="form-select" formControlName="rentPeriod">
+          @for (o of periodOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="sr-deposit">مبلغ التأمين *</label>
+        <input
+          id="sr-deposit"
+          type="number"
+          class="form-control"
+          formControlName="depositAmount"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.depositAmount" label="مبلغ التأمين" />
+      </div>
+      <div></div>
+
+      <div class="span-2">
+        <label class="form-label" for="sr-terms">شروط الإيجار</label>
+        <textarea id="sr-terms" class="form-control" rows="2" formControlName="terms"></textarea>
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="sr-notes">ملاحظات</label>
+        <textarea id="sr-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+      </div>
+
+      @if (motorcycle() || driver()) {
+        <div class="span-2 rental-summary anim-scale-in" aria-live="polite">
+          <div class="rental-summary__item">
+            <app-icon name="bike" [size]="18" />
+            <div>
+              <span class="muted">الموتوسيكل</span>
+              <strong class="ltr">{{ motorcycle()?.plateNumber ?? '—' }}</strong>
+            </div>
+          </div>
+          <div class="rental-summary__item">
+            <app-icon name="user" [size]="18" />
+            <div>
+              <span class="muted">السائق</span>
+              <strong>{{ driver()?.fullName ?? '—' }}</strong>
+            </div>
+          </div>
+          <div class="rental-summary__item">
+            <app-icon name="cash" [size]="18" />
+            <div>
+              <span class="muted">الإيجار ({{ periodLabel() }})</span>
+              <strong class="amount">{{ amounts().rent | money }}</strong>
+            </div>
+          </div>
+          <div class="rental-summary__item">
+            <app-icon name="shield" [size]="18" />
+            <div>
+              <span class="muted">التأمين</span>
+              <strong class="amount">{{ amounts().deposit | money }}</strong>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        <app-icon name="play" [size]="14" />
+        بدء الإيجار
+      </button>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,104 @@
+/* ── BASE ── */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  font-family: var(--font-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-base);
+  background: var(--bg);
+  color: var(--txt);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  transition:
+    background-color var(--dur-3) var(--ease-out),
+    color var(--dur-3) var(--ease-out);
+}
+
+/* The root component is an inline custom element by default, which breaks the
+   height chain: pages that size themselves with `flex: 1` (login, 404) would
+   stop at their content height and leave the body showing underneath.
+   Making it a full-height flex column lets every top-level page fill the screen. */
+app-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--txt);
+  line-height: 1.35;
+}
+
+a {
+  color: var(--primary);
+  transition: color var(--dur-1);
+  &:hover {
+    color: var(--primary-hover);
+  }
+}
+
+::selection {
+  background: var(--primary-soft-2);
+  color: var(--txt);
+}
+
+/* Keyboard focus is always visible; mouse focus stays clean. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.container-fluid {
+  padding-inline: 1.5rem !important;
+
+  @media (max-width: 576px) {
+    padding-inline: 0.875rem !important;
+  }
+}
+
+/* Numbers, emails, codes inside Arabic text read left-to-right. */
+.ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── SCROLLBAR ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brd2) transparent;
+}
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brd2);
+  border-radius: var(--r-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  &:hover {
+    background-color: var(--txt3);
+  }
+}
+
+body.app-modal-open {
+  overflow: hidden;
+}

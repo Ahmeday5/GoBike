@@ -1,0 +1,206 @@
+.oq-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--r-full);
+  background: var(--am-l);
+  color: var(--am);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  animation: pop-in var(--dur-4) var(--ease-spring) both;
+}
+.oq-pending__dot {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--am);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -0.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--am);
+    animation: pulse-ring 1.8s ease-out infinite;
+  }
+}
+
+.oq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  transition: opacity var(--dur-2);
+
+  &--refreshing {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.oq-empty {
+  grid-column: 1 / -1;
+  padding: 1rem;
+  border: 1px dashed var(--brd2);
+  border-radius: var(--rl);
+  background: var(--bg2);
+}
+
+.oq-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--brd);
+  border-radius: var(--rl);
+  background: var(--bg2);
+  box-shadow: var(--shadow);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    box-shadow var(--dur-3),
+    border-color var(--dur-3);
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--brd2);
+    box-shadow: var(--shadow-md);
+
+    .oq-card__play {
+      transform: scale(1.12);
+      box-shadow: var(--shadow-brand);
+    }
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+
+  &--over {
+    border-color: color-mix(in srgb, var(--re) 35%, transparent);
+  }
+
+  &--skeleton {
+    gap: 0.625rem;
+    padding: 0.875rem;
+    cursor: default;
+  }
+}
+
+.oq-card__thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 7.5rem;
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--primary) 35%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--ink-800), var(--ink-950));
+}
+.oq-card__play {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: var(--on-primary);
+  transition:
+    transform var(--dur-3) var(--ease-spring),
+    box-shadow var(--dur-3);
+}
+.oq-card__status {
+  position: absolute;
+  top: 0.625rem;
+  inset-inline-start: 0.625rem;
+
+  ::ng-deep .chip {
+    background: var(--bg2);
+  }
+}
+.oq-card__size {
+  position: absolute;
+  bottom: 0.5rem;
+  inset-inline-end: 0.625rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--ink-950) 70%, transparent);
+  color: var(--ink-100);
+  font-size: 0.6875rem;
+}
+.oq-card__deleted {
+  position: absolute;
+  bottom: 0.5rem;
+  inset-inline-start: 0.625rem;
+  color: var(--ink-300);
+  font-size: 0.6875rem;
+}
+
+.oq-card__body {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem 1rem;
+}
+.oq-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.oq-card__plate {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.oq-card__time,
+.oq-card__driver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  font-size: var(--fs-xs);
+  color: var(--txt2);
+}
+.oq-card__driver {
+  font-size: var(--fs-sm);
+  color: var(--txt);
+}
+.oq-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--brd2);
+}
+.oq-card__km {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.oq-card__over {
+  padding: 0 0.375rem;
+  border-radius: var(--r-full);
+  background: var(--re-l);
+  color: var(--re);
+  font-size: 0.6875rem;
+}
+.oq-card__fine {
+  font-size: var(--fs-xs);
+  color: var(--txt2);
+}
+.oq-card__reason {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: var(--fs-xs);
+  color: var(--re);
+}

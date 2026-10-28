@@ -1,0 +1,63 @@
+@if (user(); as u) {
+  <button
+    type="button"
+    class="um-trigger"
+    [class.um-trigger--open]="open()"
+    (click)="toggle()"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="open()"
+  >
+    <span class="um-avatar">{{ u.avatar }}</span>
+    <span class="um-meta">
+      <strong>{{ u.name }}</strong>
+      <small>{{ u.role }}</small>
+    </span>
+    <app-icon class="um-chevron" name="chevron-down" [size]="16" />
+  </button>
+
+  @if (open()) {
+    <div class="um-panel" role="menu">
+      <div class="um-head">
+        <span class="um-avatar um-avatar--lg">{{ u.avatar }}</span>
+        <span class="um-head__meta">
+          <strong>{{ u.name }}</strong>
+          <small class="ltr">{{ u.email }}</small>
+        </span>
+      </div>
+
+      <a
+        class="um-item"
+        role="menuitem"
+        [routerLink]="accountLink"
+        (click)="close()"
+        style="--i: 1"
+      >
+        <app-icon name="user" [size]="18" />
+        <span>الملف الشخصي</span>
+      </a>
+      <button
+        type="button"
+        class="um-item"
+        role="menuitem"
+        (click)="logoutEverywhere()"
+        style="--i: 2"
+      >
+        <app-icon name="phone" [size]="18" />
+        <span>الخروج من كل الأجهزة</span>
+      </button>
+
+      <div class="um-sep" role="separator"></div>
+
+      <button
+        type="button"
+        class="um-item um-item--danger"
+        role="menuitem"
+        (click)="logout()"
+        style="--i: 3"
+      >
+        <app-icon class="um-logout-icon" name="logout" [size]="18" />
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  }
+}

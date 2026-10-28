@@ -1,0 +1,207 @@
+// ── Layout ───────────────────────────────────────────────────────────────────
+.pg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.625rem 1rem;
+  padding: 0.625rem 2px 2px;
+  font-size: 0.75rem;
+  color: var(--txt2);
+  transition: opacity 0.15s;
+
+  &--busy {
+    opacity: 0.6;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+// ── Meta (range + page-size picker) ──────────────────────────────────────────
+.pg-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pg-range {
+  strong {
+    color: var(--txt);
+    font-weight: 600;
+  }
+}
+
+.pg-size-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: default;
+}
+
+.pg-size-select {
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 0.25rem 1.75rem 0.25rem 0.5rem;
+  border-radius: var(--r);
+  border: 1px solid var(--brd2);
+  background: var(--bg2);
+  color: var(--txt);
+  appearance: auto;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+.pg-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// Base button
+.pg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.375rem;
+  border-radius: var(--r);
+  border: 1px solid var(--brd);
+  background: var(--bg2);
+  color: var(--txt2);
+  cursor: pointer;
+  transition:
+    background 0.1s,
+    color 0.1s,
+    border-color 0.1s,
+    box-shadow 0.1s;
+  line-height: 1;
+
+  &:hover:not(:disabled):not(.pg-btn--active) {
+    background: var(--bg3);
+    border-color: var(--brd2);
+    color: var(--txt);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  &:active:not(:disabled):not(.pg-btn--active) {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+
+  // Active / current page
+  &--active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 600;
+    cursor: default;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+
+  // Prev / Next arrows
+  &--step {
+    color: var(--txt2);
+  }
+
+  // First / Last edge buttons — slightly muted
+  &--edge {
+    color: var(--txt3);
+
+    &:hover:not(:disabled) {
+      color: var(--txt);
+    }
+  }
+}
+
+// ── Ellipsis ──────────────────────────────────────────────────────────────────
+.pg-ellipsis {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 2rem;
+  padding-bottom: 0.25rem;
+  color: var(--txt3);
+  font-size: 0.6875rem;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+// ── Jump-to-page ──────────────────────────────────────────────────────────────
+.pg-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.pg-jump-label {
+  white-space: nowrap;
+}
+
+.pg-jump-input {
+  font-family: inherit;
+  font-size: 0.75rem;
+  width: 2.875rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border-radius: var(--r);
+  border: 1px solid var(--brd2);
+  background: var(--bg2);
+  color: var(--txt);
+  text-align: center;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+
+  &::placeholder {
+    color: var(--txt3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+    border-color: var(--primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pg-jump-total {
+  white-space: nowrap;
+  color: var(--txt3);
+}
+
+/* Chevrons are drawn for left-to-right; mirror them so "next" points left in RTL. */
+:host-context([dir='rtl']) .pg-btn svg {
+  transform: scaleX(-1);
+}

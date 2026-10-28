@@ -1,0 +1,187 @@
+/* ══════════════════════════════════════════════════════════════
+   MOTION LIBRARY — shared keyframes + utility classes.
+   Stagger any list with `style="--i: N"` on each child.
+   Everything is disabled under `prefers-reduced-motion` (bottom).
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Slides in from the inline-start side — the right, since the app is RTL-only. */
+@keyframes slide-in-start {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(3px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-6px);
+  }
+  40%,
+  60% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--primary-ring);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes skeleton {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Utilities ── */
+.anim-fade-up,
+.anim-fade-in,
+.anim-scale-in,
+.anim-slide-in {
+  animation-duration: var(--dur-4);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--i, 0) * 60ms + var(--delay, 0ms));
+}
+.anim-fade-up {
+  animation-name: fade-up;
+}
+.anim-fade-in {
+  animation-name: fade-in;
+}
+.anim-scale-in {
+  animation-name: scale-in;
+}
+.anim-slide-in {
+  animation-name: slide-in-start;
+}
+
+.skeleton {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 50%, var(--bg3) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+/* ── Route transitions (View Transitions API; router uses withViewTransitions) ──
+   Only the page content animates — sidebar and topbar stay put. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(page) {
+  animation: 160ms var(--ease-in-out) both fade-out-page;
+}
+::view-transition-new(page) {
+  animation: 360ms var(--ease-out) both fade-up;
+}
+@keyframes fade-out-page {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ── Accessibility: honor the OS "reduce motion" setting everywhere ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

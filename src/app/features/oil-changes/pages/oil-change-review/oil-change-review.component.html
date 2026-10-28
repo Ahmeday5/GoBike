@@ -1,0 +1,287 @@
+<app-page-header
+  title="مراجعة فيديو تغيير الزيت"
+  [subtitle]="s() ? 'الموتوسيكل ' + (s()?.plateNumber ?? '') + ' · ' + (s()?.driverName ?? '') : ''"
+>
+  <button type="button" class="btn" (click)="backToQueue()">
+    <app-icon name="arrow-right" [size]="16" />
+    العودة للقائمة
+  </button>
+  @if (nextId()) {
+    <button type="button" class="btn btn-ghost" (click)="goNext()">
+      التالي
+      <app-icon name="arrow-left" [size]="16" />
+    </button>
+  }
+</app-page-header>
+
+@if (submission.error(); as err) {
+  <section class="panel">
+    @if (err.status === 404) {
+      <app-empty-state
+        icon="video"
+        title="الطلب غير موجود"
+        text="ربما حُذف أو يخص مكتبًا آخر لا تملك صلاحية عليه."
+      >
+        <button type="button" class="btn btn-brand" (click)="backToQueue()">العودة للقائمة</button>
+      </app-empty-state>
+    } @else {
+      <app-empty-state icon="alert" title="تعذّر تحميل الطلب" [text]="err.message">
+        <button type="button" class="btn" (click)="submission.reload()">
+          <app-icon name="refresh" [size]="14" />
+          إعادة المحاولة
+        </button>
+      </app-empty-state>
+    }
+  </section>
+} @else if (!s()) {
+  <div class="rv">
+    <div class="rv__main">
+      <span class="skeleton rv__skeleton-video"></span>
+      <span class="skeleton" style="height: 9rem"></span>
+    </div>
+    <div class="rv__side">
+      <span class="skeleton" style="height: 18rem"></span>
+    </div>
+  </div>
+} @else {
+  @let sub = s()!;
+  <div class="rv" [class.rv--refreshing]="submission.loading()">
+    <div class="rv__main">
+      <app-oil-video-player
+        [submissionId]="sub.id"
+        [available]="sub.videoAvailable !== false"
+        [expired]="sub.status === 'Expired'"
+        [sizeBytes]="sub.videoSizeBytes"
+      />
+
+      <section class="panel" style="--i: 1">
+        <div class="panel__head">
+          <h2 class="panel__title"><app-icon name="file" [size]="18" /> بيانات الطلب</h2>
+          <app-enum-chip [map]="STATUS" [value]="sub.status" />
+        </div>
+        <dl class="kv">
+          <div>
+            <dt>الموتوسيكل</dt>
+            <dd>
+              <a class="ltr" [routerLink]="ROUTES.motorcycle(sub.motorcycleId)">{{
+                sub.plateNumber ?? 'عرض الموتوسيكل'
+              }}</a>
+            </dd>
+          </div>
+          <div>
+            <dt>السائق</dt>
+            <dd>
+              <a [routerLink]="ROUTES.driver(sub.driverId)">{{ sub.driverName ?? 'عرض السائق' }}</a>
+            </dd>
+          </div>
+          <div>
+            <dt>وقت الرفع</dt>
+            <dd>
+              {{ sub.submittedAtUtc | cairoDate }}
+              <span class="muted rv__rel">({{ sub.submittedAtUtc | cairoDate: 'relative' }})</span>
+            </dd>
+          </div>
+          <div>
+            <dt>المسافة منذ آخر تغيير زيت</dt>
+            <dd [class]="levelClass(sub.kmAtSubmit, fine()?.maxKm)">
+              <span class="ltr">{{ sub.kmAtSubmit | km }}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>قراءة العدّاد عند الرفع</dt>
+            <dd class="ltr">{{ sub.odometerKmAtSubmit != null ? (sub.odometerKmAtSubmit | km) : '—' }}</dd>
+          </div>
+          <div>
+            <dt>ملف الفيديو</dt>
+            <dd>
+              <span class="rv__file">{{ sub.videoFileName ?? '—' }}</span>
+              @if (sub.videoSizeBytes) {
+                <span class="muted ltr"> · {{ sub.videoSizeBytes | bytes }}</span>
+              }
+            </dd>
+          </div>
+        </dl>
+        @if (sub.driverNotes) {
+          <blockquote class="rv__notes">
+            <app-icon name="info" [size]="16" />
+            <span><strong>ملاحظات السائق:</strong> {{ sub.driverNotes }}</span>
+          </blockquote>
+        }
+      </section>
+    </div>
+
+    <aside class="rv__side">
+      @if (isPending()) {
+        <section class="panel rv__decision" style="--i: 2">
+          <div class="panel__head">
+            <h2 class="panel__title"><app-icon name="shield" [size]="18" /> القرار</h2>
+          </div>
+
+          @if (fine(); as f) {
+            <div
+              class="rv__fine"
+              [class.rv__fine--none]="f.overKm === 0"
+              [class.rv__fine--due]="f.overKm > 0"
+              role="status"
+            >
+              @if (fineLoading()) {
+                <span class="skeleton" style="height: 3.5rem"></span>
+              } @else if (f.overKm === 0) {
+                <app-icon name="check-circle" [size]="22" />
+                <div>
+                  <strong>بدون غرامة</strong>
+                  <p>
+                    المسافة <span class="ltr">{{ sub.kmAtSubmit | km }}</span> ضمن الحد المسموح
+                    (<span class="ltr">{{ f.maxKm | km }}</span>).
+                  </p>
+                </div>
+              } @else {
+                <app-icon name="alert" [size]="22" />
+                <div>
+                  <span class="rv__fine-label">الغرامة المتوقعة عند القبول</span>
+                  @if (f.amount != null) {
+                    <strong class="amount amount--debt rv__fine-amount">{{ f.amount | money }}</strong>
+                    <p>
+                      <span class="ltr">{{ f.overKm | num }}</span> كم زيادة ×
+                      <span class="ltr">{{ f.rate | money }}</span> للكيلو، تُسجَّل مديونيةً على السائق.
+                    </p>
+                  } @else {
+                    <strong class="rv__fine-amount">يحسبها النظام</strong>
+                    <p>
+                      تجاوز الحد بحوالي <span class="ltr">{{ f.overKm | num }}</span> كم؛ ستُحسب الغرامة
+                      حسب سعر الكيلو في سياسة الزيت.
+                    </p>
+                  }
+                  @if (f.assumedMax) {
+                    <p class="muted">محسوبة على الحد الافتراضي <span class="ltr">{{ f.maxKm | km }}</span>.</p>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <form [formGroup]="approveForm" (ngSubmit)="approve()" novalidate>
+            <label class="form-label" for="rv-notes">ملاحظات (اختياري)</label>
+            <textarea
+              id="rv-notes"
+              class="form-control"
+              rows="2"
+              formControlName="notes"
+              placeholder="مثال: تم التأكد من نوع الزيت والفلتر"
+            ></textarea>
+            <app-form-error [control]="approveForm.controls.notes" label="الملاحظات" />
+            <p class="form-hint">عند القبول يُصفَّر عدّاد الزيت للموتوسيكل ويُحذف الفيديو تلقائيًا.</p>
+
+            <div class="rv__actions">
+              <button type="submit" class="btn btn-gr btn-lg" [disabled]="approving() || rejecting()">
+                @if (approving()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                } @else {
+                  <app-icon name="check-circle" [size]="18" />
+                }
+                قبول
+              </button>
+              <button
+                type="button"
+                class="btn btn-re btn-lg"
+                [disabled]="approving() || rejecting()"
+                (click)="openReject()"
+              >
+                <app-icon name="close" [size]="18" />
+                رفض
+              </button>
+            </div>
+          </form>
+        </section>
+      } @else {
+        <section class="panel" style="--i: 2">
+          <div class="panel__head">
+            <h2 class="panel__title"><app-icon name="check-circle" [size]="18" /> نتيجة المراجعة</h2>
+          </div>
+          <div class="rv__result">
+            <app-enum-chip [map]="STATUS" [value]="sub.status" />
+            @switch (sub.status) {
+              @case ('Expired') {
+                <p>
+                  لم يراجع أحد هذا الفيديو خلال 7 أيام فانتهت مهلته وحُذف تلقائيًا. على السائق رفع
+                  فيديو جديد من التطبيق.
+                </p>
+              }
+              @case ('Rejected') {
+                <p>طُلب من السائق رفع فيديو أوضح. الرفض لا يترتب عليه أي غرامة.</p>
+              }
+              @case ('Approved') {
+                <p>تم تصفير عدّاد الزيت للموتوسيكل.</p>
+              }
+            }
+          </div>
+          <dl class="kv rv__result-kv">
+            @if (sub.reviewedAtUtc) {
+              <div>
+                <dt>وقت المراجعة</dt>
+                <dd>{{ sub.reviewedAtUtc | cairoDate }}</dd>
+              </div>
+            }
+            @if (sub.reviewedByName) {
+              <div>
+                <dt>بواسطة</dt>
+                <dd>{{ sub.reviewedByName }}</dd>
+              </div>
+            }
+            @if (sub.status === 'Approved') {
+              <div>
+                <dt>الغرامة</dt>
+                <dd>
+                  @if (sub.fineAmount) {
+                    <span class="amount amount--debt">{{ sub.fineAmount | money }}</span>
+                    @if (sub.finedKm) {
+                      <span class="muted"> (<span class="ltr">{{ sub.finedKm | km }}</span>)</span>
+                    }
+                  } @else {
+                    بدون غرامة
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+          @if (sub.rejectReason) {
+            <blockquote class="rv__notes rv__notes--danger">
+              <app-icon name="alert" [size]="16" />
+              <span><strong>سبب الرفض:</strong> {{ sub.rejectReason }}</span>
+            </blockquote>
+          }
+        </section>
+      }
+    </aside>
+  </div>
+
+  <app-modal [open]="rejectOpen()" title="رفض الفيديو" size="md" (closed)="rejectOpen.set(false)">
+    <form [formGroup]="rejectForm" (ngSubmit)="reject()" novalidate>
+      <div class="rv__reject-hint">
+        <app-icon name="info" [size]="18" />
+        <p>
+          سيُطلب من السائق <strong>{{ sub.driverName ?? '' }}</strong> رفع فيديو أوضح من التطبيق.
+          <strong>لا تُطبَّق أي غرامة</strong> عند الرفض ويبقى عدّاد الزيت كما هو.
+        </p>
+      </div>
+      <label class="form-label" for="rv-reason">سبب الرفض *</label>
+      <textarea
+        id="rv-reason"
+        class="form-control"
+        rows="3"
+        formControlName="reason"
+        placeholder="مثال: الفيديو غير واضح ولا يظهر فيه تغيير الفلتر"
+      ></textarea>
+      <app-form-error [control]="rejectForm.controls.reason" label="سبب الرفض" />
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="rejectOpen.set(false)">إلغاء</button>
+        <button type="submit" class="btn btn-re" [disabled]="rejecting()">
+          @if (rejecting()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          تأكيد الرفض
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

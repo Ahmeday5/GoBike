@@ -1,0 +1,206 @@
+.rr-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--r);
+  background: var(--bg3);
+  font-size: var(--fs-sm);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  app-icon {
+    color: var(--txt3);
+  }
+}
+
+.rr-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  legend {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 575.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rr-option {
+  --tone: var(--gr);
+  --tone-l: var(--gr-l);
+
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  padding: 1.125rem 1rem;
+  border: 2px solid var(--brd);
+  border-radius: var(--rl);
+  background: var(--bg2);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-2),
+    background var(--dur-2),
+    box-shadow var(--dur-3),
+    transform var(--dur-3) var(--ease-spring);
+
+  &--faults {
+    --tone: var(--re);
+    --tone-l: var(--re-l);
+  }
+  &:hover {
+    border-color: var(--tone);
+    transform: translateY(-2px);
+  }
+  &:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 25%, transparent);
+  }
+  &--active {
+    border-color: var(--tone);
+    background: var(--tone-l);
+    box-shadow: var(--shadow-md);
+
+    .rr-option__icon {
+      color: var(--bg2);
+      background: var(--tone);
+      animation: pop-in var(--dur-4) var(--ease-spring);
+    }
+  }
+}
+.rr-option__icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.25rem;
+  border-radius: var(--r-full);
+  color: var(--tone);
+  background: var(--tone-l);
+  transition:
+    background var(--dur-2),
+    color var(--dur-2);
+}
+.rr-option__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--tone);
+}
+.rr-option__sub {
+  font-size: var(--fs-xs);
+  color: var(--txt2);
+}
+
+.rr-effect {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--r);
+  border: 1px solid color-mix(in srgb, var(--gr) 30%, transparent);
+  background: var(--gr-l);
+  color: var(--txt);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+
+  app-icon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--gr);
+  }
+  &--faults {
+    border-color: color-mix(in srgb, var(--re) 30%, transparent);
+    background: var(--re-l);
+    app-icon {
+      color: var(--re);
+    }
+  }
+}
+
+.rr-faults {
+  display: grid;
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+.rr-missing {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r);
+  background: var(--re-l);
+  color: var(--re);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  animation: shake 0.4s var(--ease-out);
+}
+
+.rr-done {
+  --tone: var(--gr);
+  --tone-l: var(--gr-l);
+
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem 0.25rem;
+  text-align: center;
+
+  &--faults {
+    --tone: var(--re);
+    --tone-l: var(--re-l);
+  }
+}
+.rr-done__icon {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+  border-radius: var(--r-full);
+  color: var(--tone);
+  background: var(--tone-l);
+  animation: pop-in var(--dur-4) var(--ease-spring);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--tone);
+    animation: pulse-ring 1.6s var(--ease-out) 2;
+  }
+}
+.rr-done__title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--tone);
+  animation: fade-up var(--dur-4) var(--ease-out) 80ms both;
+}
+.rr-done__text {
+  max-width: 28rem;
+  margin: 0;
+  color: var(--txt2);
+  font-size: var(--fs-sm);
+  line-height: 1.8;
+  animation: fade-up var(--dur-4) var(--ease-out) 140ms both;
+}
+.rr-done__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  animation: fade-up var(--dur-4) var(--ease-out) 200ms both;
+}

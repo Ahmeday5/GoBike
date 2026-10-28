@@ -1,0 +1,247 @@
+/* Motorcycle scene — see the component doc comment for the idea.
+   Every moving part is one CSS keyframe; the illusion of speed comes from
+   the world moving right while the bike stays in place. */
+
+:host {
+  display: block;
+}
+
+.scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ── World moving past ── */
+.streak {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 2;
+  stroke-linecap: round;
+  animation: streak-fly 1.1s linear infinite;
+}
+
+/* Each streak is one dash of length --len followed by a 640 gap. Starting at
+   +len hides the dash just before the left edge; ending at -640 pushes it past
+   the right edge. The travel (len + 640) equals the pattern length, so the
+   loop restarts invisibly. Negative offsets move the dash rightward. */
+@keyframes streak-fly {
+  from {
+    stroke-dashoffset: calc(var(--len) * 1px);
+  }
+  to {
+    stroke-dashoffset: -640px;
+  }
+}
+
+.road {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 3;
+  stroke-dasharray: 26 18;
+  animation: road-roll 0.45s linear infinite;
+}
+
+@keyframes road-roll {
+  to {
+    /* One full dash + gap (26 + 18) so the loop is seamless. */
+    stroke-dashoffset: -44;
+  }
+}
+
+/* ── Entrance: drive in from the right, nose slightly up, then settle ── */
+.moto {
+  /* Tilt around the bike's own bottom-center, not the drawing's corner. */
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: moto-arrive 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes moto-arrive {
+  0% {
+    transform: translateX(560px) rotate(-4deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-14px) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ── Wheels ── */
+.wheel-spin {
+  /* Counter-clockwise = rolling toward the left. */
+  animation: wheel-spin 0.7s linear infinite;
+}
+
+@keyframes wheel-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.tire {
+  fill: none;
+  stroke: #0d0d0e;
+  stroke-width: 15;
+}
+.tread {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 13;
+  stroke-dasharray: 3 7;
+}
+.rim {
+  fill: none;
+  stroke: #d6d6db;
+  stroke-width: 3;
+}
+.spoke {
+  stroke: #b9b9bf;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.disc {
+  fill: none;
+  stroke: #85858b;
+  stroke-width: 4;
+  stroke-dasharray: 3 3;
+}
+.hub {
+  fill: #be3232;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+/* ── Body on suspension ── */
+.body {
+  animation: suspension 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes suspension {
+  to {
+    transform: translateY(-3px);
+  }
+}
+
+.frame {
+  fill: none;
+  stroke: #5b5b60;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.engine {
+  fill: #3a3a3e;
+  stroke: #66666b;
+  stroke-width: 2;
+}
+.fin {
+  stroke: #707076;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.pipe {
+  fill: none;
+  stroke: #c4c4ca;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.muffler {
+  stroke: #9a9aa0;
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+.seat {
+  fill: #18181a;
+  stroke: #3a3a3e;
+  stroke-width: 2;
+}
+.paint {
+  fill: #be3232;
+}
+.taillight {
+  fill: #ff5a5a;
+  filter: drop-shadow(0 0 6px #ff3b3b);
+  animation: blink 1.6s ease-in-out infinite;
+}
+.tank {
+  fill: url(#moto-tank);
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1.5;
+}
+.gloss {
+  fill: #fff;
+  opacity: 0.35;
+}
+.fork {
+  stroke: #c9c9cf;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.fender {
+  fill: none;
+  stroke: #be3232;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+.bar {
+  fill: none;
+  stroke: #2b2b2e;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.headlight {
+  fill: #ffe7a8;
+  filter: drop-shadow(0 0 8px #ffd56b);
+}
+.beam {
+  animation: beam-flicker 2.4s ease-in-out infinite;
+}
+
+@keyframes beam-flicker {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ── Exhaust smoke ── */
+.puff {
+  fill: rgba(255, 255, 255, 0.5);
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: puff 1.35s ease-out infinite;
+}
+
+@keyframes puff {
+  0% {
+    opacity: 0.55;
+    transform: translate(0, 0) scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(70px, -26px) scale(2.8);
+  }
+}
+
+/* Reduced motion: keep the drawing, drop every animation. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+  }
+}

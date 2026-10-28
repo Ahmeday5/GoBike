@@ -1,0 +1,208 @@
+/* ── TOPBAR — frosted glass over the scrolling page ── */
+:host {
+  display: block;
+  position: relative;
+  z-index: 100;
+}
+
+.topbar {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 1.5rem;
+  background: var(--bg-glass);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--brd);
+  animation: fade-down var(--dur-4) var(--ease-out) both;
+
+  @media (max-width: 576px) {
+    padding-inline: 0.75rem;
+    gap: 0.5rem;
+  }
+}
+
+.tb-start,
+.tb-end {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.tb-end {
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+/* ── Icon buttons ── */
+.tb-icon-btn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--brd);
+  border-radius: 0.75rem;
+  background: var(--bg2);
+  color: var(--txt2);
+  cursor: pointer;
+  transition:
+    background var(--dur-2),
+    color var(--dur-2),
+    border-color var(--dur-2),
+    transform var(--dur-3) var(--ease-spring);
+
+  &:hover {
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-color: var(--primary-soft-2);
+  }
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+/* The panel glyph mirrors when the sidebar is collapsed. */
+.tb-toggle app-icon {
+  transition: transform var(--dur-4) var(--ease-spring);
+}
+.tb-toggle--collapsed app-icon {
+  transform: scaleX(-1);
+}
+
+/* ── Title + breadcrumb ── */
+.tb-heading {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.tb-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--fs-xs);
+  color: var(--txt3);
+  white-space: nowrap;
+
+  @media (max-width: 576px) {
+    display: none;
+  }
+}
+.tb-crumbs__sep {
+  opacity: 0.5;
+}
+.tb-crumbs__current {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tb-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: title-in var(--dur-4) var(--ease-out) both;
+}
+
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+}
+
+/* ── Date chip ── */
+.tb-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--brd);
+  border-radius: var(--r-full);
+  background: var(--bg2);
+  color: var(--txt2);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+
+  app-icon {
+    color: var(--primary);
+  }
+
+  @media (max-width: 1199.98px) {
+    display: none;
+  }
+}
+
+.tb-divider {
+  width: 1px;
+  height: 1.75rem;
+  background: var(--brd2);
+
+  @media (max-width: 576px) {
+    display: none;
+  }
+}
+
+/* ── Live-updates indicator (SignalR status) ── */
+.tb-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--r-full);
+  background: var(--gr-l);
+  color: var(--gr);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  animation: fade-in var(--dur-3) var(--ease-out);
+
+  &--down {
+    background: var(--am-l);
+    color: var(--am);
+
+    .tb-live__dot {
+      animation: blink 1s ease-in-out infinite;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    display: none;
+  }
+}
+.tb-live__dot {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: currentColor;
+    animation: live-ping 1.8s ease-out infinite;
+  }
+}
+@keyframes live-ping {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}

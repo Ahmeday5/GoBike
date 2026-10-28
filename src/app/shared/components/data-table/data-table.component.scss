@@ -1,0 +1,107 @@
+// Base table look (.tw) is global in styles/_patterns.scss; this adds behavior.
+:host {
+  display: block;
+}
+
+.dt {
+  position: relative;
+  transition: opacity var(--dur-2);
+
+  &--refreshing table {
+    opacity: 0.55;
+  }
+}
+
+/* Indeterminate bar on top while reloading with data already shown */
+.dt__progress {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 2;
+  height: 3px;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    width: 35%;
+    border-radius: var(--r-full);
+    background: var(--primary-gradient);
+    animation: dt-progress 1s var(--ease-in-out) infinite;
+  }
+}
+
+@keyframes dt-progress {
+  from {
+    transform: translateX(120%);
+  }
+  to {
+    transform: translateX(-320%);
+  }
+}
+
+.dt__align-start {
+  text-align: start !important;
+}
+.dt__align-center {
+  text-align: center !important;
+}
+.dt__align-end {
+  text-align: end !important;
+}
+
+.dt__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--txt);
+  }
+}
+
+.dt__sort-icon {
+  display: inline-flex;
+  opacity: 0.3;
+  transition:
+    opacity var(--dur-2),
+    transform var(--dur-3) var(--ease-out);
+
+  &--active {
+    opacity: 1;
+    color: var(--primary);
+    transform: rotate(180deg);
+  }
+  &--desc {
+    transform: none;
+  }
+}
+
+.dt__row--clickable {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+  }
+}
+
+.dt__skeleton-row td {
+  padding-block: 1rem !important;
+}
+.dt__skeleton {
+  display: inline-block;
+  height: 0.75rem;
+}
+
+.dt__empty {
+  padding: 2.5rem 1rem !important;
+  background: transparent !important;
+}

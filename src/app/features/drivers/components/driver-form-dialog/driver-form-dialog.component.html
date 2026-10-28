@@ -1,0 +1,122 @@
+<app-modal
+  [open]="open()"
+  [title]="editing() ? 'تعديل بيانات السائق' : 'إضافة سائق'"
+  size="lg"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <h3 class="form-section-title">البيانات الشخصية</h3>
+
+      <div class="span-2">
+        <label class="form-label" for="d-name">الاسم الكامل *</label>
+        <input id="d-name" class="form-control" formControlName="fullName" autocomplete="off" />
+        <app-form-error [control]="form.controls.fullName" label="الاسم" />
+      </div>
+      <div>
+        <label class="form-label" for="d-phone">رقم الهاتف *</label>
+        <input
+          id="d-phone"
+          type="tel"
+          class="form-control"
+          formControlName="phoneNumber"
+          dir="ltr"
+          inputmode="tel"
+          placeholder="01xxxxxxxxx"
+          autocomplete="off"
+        />
+        <app-form-error [control]="form.controls.phoneNumber" label="رقم الهاتف" />
+        @if (editing()) {
+          <p class="form-hint">
+            <app-icon name="info" [size]="12" />
+            تغيير الرقم يغيّر رقم الدخول إلى التطبيق أيضًا (كلمة المرور كما هي).
+          </p>
+        } @else {
+          <p class="form-hint">هذا الرقم هو اسم المستخدم للدخول إلى التطبيق.</p>
+        }
+      </div>
+      <div>
+        <label class="form-label" for="d-nid">الرقم القومي</label>
+        <input
+          id="d-nid"
+          class="form-control"
+          formControlName="nationalId"
+          dir="ltr"
+          inputmode="numeric"
+          autocomplete="off"
+        />
+        <app-form-error [control]="form.controls.nationalId" label="الرقم القومي" />
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="d-address">العنوان</label>
+        <input id="d-address" class="form-control" formControlName="address" />
+        <app-form-error [control]="form.controls.address" label="العنوان" />
+      </div>
+
+      <h3 class="form-section-title">رخصة القيادة</h3>
+
+      <div>
+        <label class="form-label" for="d-lic">رقم الرخصة</label>
+        <input id="d-lic" class="form-control" formControlName="licenseNumber" dir="ltr" />
+        <app-form-error [control]="form.controls.licenseNumber" label="رقم الرخصة" />
+      </div>
+      <div>
+        <label class="form-label" for="d-licexp">تاريخ انتهاء الرخصة</label>
+        <input
+          id="d-licexp"
+          type="date"
+          class="form-control"
+          formControlName="licenseExpiryDate"
+        />
+        <app-form-error [control]="form.controls.licenseExpiryDate" label="تاريخ الانتهاء" />
+      </div>
+
+      <h3 class="form-section-title">التشغيل</h3>
+
+      <div>
+        <label class="form-label" for="d-office">المكتب *</label>
+        <select id="d-office" class="form-select" formControlName="officeId">
+          <option value="" disabled>اختر المكتب</option>
+          @for (o of offices(); track o.id) {
+            <option [value]="o.id">{{ o.name }}</option>
+          }
+        </select>
+        <app-form-error [control]="form.controls.officeId" label="المكتب" />
+      </div>
+      <div>
+        <label class="form-label" for="d-sup">المشرف</label>
+        <select id="d-sup" class="form-select" formControlName="supervisorUserId">
+          <option value="">بدون مشرف</option>
+          @for (u of staff(); track u.id) {
+            <option [value]="u.id">{{ u.fullName }}</option>
+          }
+        </select>
+      </div>
+
+      @if (!editing()) {
+        <h3 class="form-section-title">حساب التطبيق</h3>
+        <div class="span-2">
+          <label class="form-label" for="d-pw">كلمة المرور (اختيارية)</label>
+          <app-password-input
+            inputId="d-pw"
+            formControlName="password"
+            autocomplete="new-password"
+            placeholder="اتركها فارغة للتوليد التلقائي"
+          />
+          <app-form-error [control]="form.controls.password" label="كلمة المرور" />
+          <app-password-rules [value]="password()" />
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        {{ editing() ? 'حفظ التعديلات' : 'إضافة السائق' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

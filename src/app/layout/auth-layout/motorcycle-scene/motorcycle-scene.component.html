@@ -1,0 +1,102 @@
+<svg class="scene" viewBox="0 0 640 300" preserveAspectRatio="xMidYMax meet">
+  <defs>
+    <linearGradient id="moto-tank" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e04848" />
+      <stop offset="1" stop-color="#8f2424" />
+    </linearGradient>
+    <linearGradient id="moto-beam" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffe7a8" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#ffe7a8" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id="moto-shadow">
+      <stop offset="0" stop-color="#000" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- 1 · Speed streaks (behind everything) -->
+  @for (s of streaks; track s.y) {
+    <line
+      class="streak"
+      x1="0"
+      [attr.y1]="s.y"
+      x2="640"
+      [attr.y2]="s.y"
+      [style.--len]="s.len"
+      [style.stroke-dasharray]="s.len + ' 640'"
+      [style.animation-delay.s]="-s.delay"
+    />
+  }
+
+  <!-- 2 · Road: a dashed line whose dashes slide to the right -->
+  <line class="road" x1="0" y1="264" x2="640" y2="264" />
+
+  <!-- 3 · The motorcycle (drives in once on load) -->
+  <g class="moto">
+    <ellipse class="shadow" cx="312" cy="262" rx="230" ry="10" fill="url(#moto-shadow)" />
+
+    <!-- 3a · Wheels: stay on the road, only spin -->
+    @for (w of wheels; track w.id) {
+      <g [attr.transform]="'translate(' + w.cx + ' 205)'">
+        <g class="wheel-spin">
+          <circle r="55" class="tire" />
+          <circle r="55" class="tread" />
+          <circle r="43" class="rim" />
+          @for (a of spokes; track a) {
+            <line
+              class="spoke"
+              x1="0"
+              y1="-10"
+              x2="0"
+              y2="-41"
+              [attr.transform]="'rotate(' + a + ')'"
+            />
+          }
+          <circle r="22" class="disc" />
+          <circle r="8" class="hub" />
+        </g>
+      </g>
+    }
+
+    <!-- 3b · Body: bobs up and down on the suspension -->
+    <g class="body">
+      <!-- headlight beam, pointing forward (left) -->
+      <polygon class="beam" points="196,108 196,130 0,190 0,60" fill="url(#moto-beam)" />
+
+      <!-- swingarm (rear axle → engine) and frame -->
+      <line class="frame" x1="455" y1="205" x2="345" y2="190" />
+      <path class="frame" d="M225 108 L300 124 L382 126 L345 190 M225 108 L288 186" />
+
+      <!-- engine block with cooling fins -->
+      <rect class="engine" x="282" y="158" width="86" height="60" rx="12" />
+      @for (y of fins; track y) {
+        <line class="fin" x1="294" [attr.y1]="y" x2="356" [attr.y2]="y" />
+      }
+
+      <!-- exhaust pipe + muffler -->
+      <path class="pipe" d="M330 216 L400 224 L470 214" />
+      <line class="muffler" x1="430" y1="214" x2="488" y2="210" />
+
+      <!-- seat, tail and tail-light -->
+      <path class="seat" d="M338 106 C360 96 420 98 440 108 L440 124 L338 128 Z" />
+      <path class="paint" d="M430 106 L502 96 C507 110 497 124 470 126 L440 126 Z" />
+      <rect class="taillight" x="496" y="100" width="9" height="6" rx="2" />
+
+      <!-- fuel tank (brand red) with a glossy highlight -->
+      <path class="tank" d="M233 112 C243 86 320 84 346 102 L346 132 C310 141 258 139 238 128 Z" />
+      <ellipse class="gloss" cx="284" cy="99" rx="30" ry="6" />
+
+      <!-- front fork, fender, handlebar, headlight -->
+      <line class="fork" x1="225" y1="108" x2="170" y2="205" />
+      <line class="fork" x1="233" y1="110" x2="178" y2="205" />
+      <path class="fender" d="M111.7 183.8 A62 62 0 0 1 191.2 146.7" />
+      <path class="bar" d="M226 104 L248 82 L270 85" />
+      <ellipse class="headlight" cx="207" cy="119" rx="11" ry="13" />
+    </g>
+
+    <!-- 3c · Exhaust smoke, drifting back from the muffler tip -->
+    @for (d of puffs; track d) {
+      <circle class="puff" cx="496" cy="209" r="7" [style.animation-delay.s]="d" />
+    }
+  </g>
+</svg>

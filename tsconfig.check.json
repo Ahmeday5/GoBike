@@ -1,0 +1,11 @@
+/* Type-checks EVERY app file, templates included (`npm run check`) — unlike
+   tsconfig.app.json, which only sees what's reachable from main.ts. */
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "files": [],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/csp.spec.ts"]
+}

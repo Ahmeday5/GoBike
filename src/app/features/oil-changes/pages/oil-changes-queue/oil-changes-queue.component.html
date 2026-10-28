@@ -1,0 +1,142 @@
+<app-page-header
+  title="فيديوهات تغيير الزيت"
+  subtitle="راجع فيديوهات تغيير الزيت التي يرفعها السائقون واعتمدها أو ارفضها"
+>
+  @if (pendingCount()) {
+    <span class="oq-pending" role="status">
+      <span class="oq-pending__dot" aria-hidden="true"></span>
+      <span class="ltr">{{ pendingCount() | num }}</span> بانتظار المراجعة
+    </span>
+  }
+</app-page-header>
+
+<app-tabs [tabs]="tabs()" [active]="f().status || 'Pending'" (activeChange)="setStatus($event)" />
+
+@if (canPickOffice() || hasScopeFilters()) {
+  <div class="filters" role="search">
+    @if (canPickOffice()) {
+      <select
+        class="form-select"
+        aria-label="المكتب"
+        [value]="f().officeId"
+        (change)="selectOffice($event)"
+      >
+        <option value="">كل المكاتب</option>
+        @for (o of offices(); track o.id) {
+          <option [value]="o.id">{{ o.name }}</option>
+        }
+      </select>
+    }
+    @if (hasScopeFilters()) {
+      <app-chip tone="info" [icon]="f().motorcycleId ? 'bike' : 'user'">
+        {{ scopeLabel() || 'نتائج مفلترة' }}
+      </app-chip>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearScope()">
+        <app-icon name="close" [size]="14" />
+        عرض الكل
+      </button>
+    }
+  </div>
+}
+
+@if (submissions.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="submissions.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+@if (submissions.initialLoading()) {
+  <div class="oq-grid" aria-busy="true">
+    @for (i of skeletons; track i) {
+      <div class="oq-card oq-card--skeleton">
+        <span class="skeleton" style="height: 6.5rem"></span>
+        <span class="skeleton" style="height: 1rem; width: 60%"></span>
+        <span class="skeleton" style="height: 0.875rem; width: 85%"></span>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="oq-grid" [class.oq-grid--refreshing]="submissions.loading()">
+    @for (s of rows(); track s.id; let i = $index) {
+      <button
+        type="button"
+        class="oq-card anim-fade-up"
+        [style.--i]="i"
+        [class.oq-card--over]="overMax(s)"
+        (click)="open(s)"
+      >
+        <span class="oq-card__thumb">
+          <span class="oq-card__play">
+            <app-icon [name]="s.videoAvailable ? 'play' : 'video'" [size]="22" />
+          </span>
+          <span class="oq-card__status"
+            ><app-enum-chip [map]="STATUS" [value]="s.status" [small]="true"
+          /></span>
+          @if (s.videoSizeBytes) {
+            <span class="oq-card__size ltr">{{ s.videoSizeBytes | bytes }}</span>
+          }
+          @if (!s.videoAvailable) {
+            <span class="oq-card__deleted">تم حذف الفيديو</span>
+          }
+        </span>
+
+        <span class="oq-card__body">
+          <span class="oq-card__head">
+            <strong class="oq-card__plate ltr">{{ s.plateNumber ?? '—' }}</strong>
+            <span class="oq-card__time" [title]="s.submittedAtUtc | cairoDate">
+              <app-icon name="clock" [size]="12" />
+              {{ s.submittedAtUtc | cairoDate: 'relative' }}
+            </span>
+          </span>
+          <span class="oq-card__driver">
+            <app-icon name="user" [size]="14" />
+            {{ s.driverName ?? '—' }}
+          </span>
+
+          <span class="oq-card__facts">
+            <span [class]="'oq-card__km ' + levelClass(s.kmAtSubmit)">
+              <app-icon name="gauge" [size]="14" />
+              <span class="ltr">{{ s.kmAtSubmit | km }}</span>
+              @if (overMax(s)) {
+                <span class="oq-card__over">تجاوز الحد</span>
+              }
+            </span>
+            @if (s.fineAmount) {
+              <span class="oq-card__fine">
+                غرامة <span class="amount amount--debt">{{ s.fineAmount | money }}</span>
+              </span>
+            }
+          </span>
+
+          @if (s.status === 'Rejected' && s.rejectReason) {
+            <span class="oq-card__reason">{{ s.rejectReason }}</span>
+          }
+        </span>
+      </button>
+    } @empty {
+      <div class="oq-empty">
+        <app-empty-state
+          icon="video"
+          [title]="f().status === 'Pending' ? 'لا يوجد ما يحتاج مراجعة' : 'لا توجد فيديوهات'"
+          [text]="emptyText()"
+        />
+      </div>
+    }
+  </div>
+}
+
+@if (page(); as p) {
+  @if (p.count > f().pageSize) {
+    <app-pagination
+      [pageIndex]="f().pageIndex"
+      [pageSize]="f().pageSize"
+      [count]="p.count"
+      [totalPages]="p.totalPages"
+      [pageSizeOptions]="[12, 24, 48]"
+      [disabled]="submissions.loading()"
+      (pageChange)="filters.patch({ pageIndex: $event })"
+      (pageSizeChange)="filters.patch({ pageSize: $event })"
+    />
+  }
+}

@@ -1,0 +1,78 @@
+<div class="ss" [class.ss--open]="open()" [class.ss--disabled]="disabled()">
+  <!-- closed control -->
+  <button
+    type="button"
+    class="form-select ss__control"
+    [class.is-invalid]="isInvalid()"
+    [disabled]="disabled()"
+    (click)="toggle()"
+  >
+    @if (selectedOption(); as sel) {
+      <span class="ss__value">
+        {{ sel.label }}
+        @if (sel.hint) {
+          <span class="ss__hint">— {{ sel.hint }}</span>
+        }
+      </span>
+      <!-- Nested in the trigger <button>, so it can't take focus itself; keyboard users re-pick from the list. -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+      <span class="ss__clear" role="button" aria-label="مسح الاختيار" (click)="clear($event)"
+        >&times;</span
+      >
+    } @else {
+      <span class="ss__placeholder">{{ placeholder() }}</span>
+    }
+  </button>
+
+  <!-- dropdown panel -->
+  @if (open()) {
+    <div class="ss__panel">
+      <input
+        #searchBox
+        type="text"
+        class="form-control ss__search"
+        [placeholder]="searchPlaceholder()"
+        [value]="term()"
+        (input)="onSearch($event)"
+        (keydown)="onKeydown($event)"
+        autocomplete="off"
+      />
+
+      <ul class="ss__list" role="listbox">
+        @for (opt of filtered(); track opt.value; let i = $index) {
+          <!-- Keyboard selection is handled by the search box (ArrowUp/ArrowDown/Enter), per the combobox pattern. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <li
+            role="option"
+            [attr.aria-selected]="selectedOption()?.value === opt.value"
+            class="ss__option"
+            [class.ss__option--active]="i === activeIndex()"
+            [class.ss__option--selected]="selectedOption()?.value === opt.value"
+            (click)="select(opt)"
+            (mouseenter)="activeIndex.set(i)"
+          >
+            <span class="ss__option-label">{{ opt.label }}</span>
+            @if (opt.hint) {
+              <span class="ss__option-hint">{{ opt.hint }}</span>
+            }
+          </li>
+        } @empty {
+          <li class="ss__empty">لا توجد نتائج مطابقة</li>
+          @if (allowCreate()) {
+            <li
+              class="ss__create"
+              role="option"
+              aria-selected="false"
+              tabindex="0"
+              (click)="requestCreate()"
+              (keydown.enter)="requestCreate()"
+              (keydown.space)="$event.preventDefault(); requestCreate()"
+            >
+              {{ createLabel() }}
+            </li>
+          }
+        }
+      </ul>
+    </div>
+  }
+</div>

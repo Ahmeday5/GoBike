@@ -1,0 +1,203 @@
+<app-modal
+  [open]="open()"
+  [title]="policy() ? 'تعديل سياسة تغيير الزيت' : 'سياسة تغيير زيت جديدة'"
+  size="lg"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <h3 class="form-section-title">البيانات الأساسية</h3>
+
+      <div class="span-2">
+        <label class="form-label" for="p-name">اسم السياسة *</label>
+        <input id="p-name" class="form-control" formControlName="name" autocomplete="off" />
+        <app-form-error [control]="form.controls.name" label="اسم السياسة" />
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="p-desc">الوصف</label>
+        <textarea id="p-desc" class="form-control" rows="2" formControlName="description"></textarea>
+      </div>
+
+      <div class="span-2 pf-toggles">
+        <div class="form-check form-switch">
+          <input
+            id="p-default"
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            formControlName="isDefault"
+          />
+          <label class="form-check-label" for="p-default">السياسة الافتراضية</label>
+        </div>
+        <div class="form-check form-switch">
+          <input
+            id="p-active"
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            formControlName="isActive"
+          />
+          <label class="form-check-label" for="p-active">مفعّلة</label>
+        </div>
+      </div>
+
+      @if (isEditingDefault()) {
+        <p class="span-2 pf-note pf-note--info">
+          <app-icon name="info" [size]="16" />
+          هذه هي السياسة الافتراضية حاليًا. لتغيير الافتراضية، فعّل الخيار في سياسة أخرى.
+        </p>
+      } @else if (replacesDefault()) {
+        <p class="span-2 pf-note pf-note--warn">
+          <app-icon name="alert" [size]="16" />
+          <span>
+            توجد سياسة افتراضية واحدة فقط. عند الحفظ ستصبح هذه السياسة الافتراضية بدلًا من
+            «{{ currentDefault()?.name }}»، وستُطبَّق على كل موتوسيكل غير مرتبط بسياسة محددة.
+          </span>
+        </p>
+      }
+
+      <h3 class="form-section-title">حدود عداد الزيت (كم منذ آخر تغيير مقبول)</h3>
+
+      <div>
+        <label class="form-label" for="p-first">التنبيه الأول *</label>
+        <input
+          id="p-first"
+          type="number"
+          class="form-control"
+          formControlName="firstWarningKm"
+          min="1"
+          step="1"
+        />
+        <app-form-error [control]="form.controls.firstWarningKm" label="التنبيه الأول" />
+      </div>
+      <div>
+        <label class="form-label" for="p-second">التنبيه الثاني *</label>
+        <input
+          id="p-second"
+          type="number"
+          class="form-control"
+          formControlName="secondWarningKm"
+          min="1"
+          step="1"
+        />
+        <app-form-error [control]="form.controls.secondWarningKm" label="التنبيه الثاني" />
+      </div>
+      <div>
+        <label class="form-label" for="p-critical">الحد الحرج *</label>
+        <input
+          id="p-critical"
+          type="number"
+          class="form-control"
+          formControlName="criticalKm"
+          min="1"
+          step="1"
+        />
+        <app-form-error [control]="form.controls.criticalKm" label="الحد الحرج" />
+      </div>
+      <div>
+        <label class="form-label" for="p-max">الحد الأقصى (بعده تبدأ الغرامة) *</label>
+        <input
+          id="p-max"
+          type="number"
+          class="form-control"
+          formControlName="maxKm"
+          min="1"
+          step="1"
+        />
+        <app-form-error [control]="form.controls.maxKm" label="الحد الأقصى" />
+      </div>
+
+      <div class="span-2 pf-preview" [class.pf-preview--bad]="form.hasError('thresholdOrder')">
+        <app-threshold-bar
+          [firstWarningKm]="form.controls.firstWarningKm.value"
+          [secondWarningKm]="form.controls.secondWarningKm.value"
+          [criticalKm]="form.controls.criticalKm.value"
+          [maxKm]="form.controls.maxKm.value"
+        />
+        @if (form.hasError('thresholdOrder')) {
+          <div class="invalid-feedback d-block" role="alert">
+            يجب أن تكون الحدود تصاعدية: التنبيه الأول &lt; التنبيه الثاني &lt; الحرج &lt; الحد الأقصى.
+          </div>
+        }
+      </div>
+
+      <h3 class="form-section-title">غرامة التأخير</h3>
+
+      <div>
+        <label class="form-label" for="p-fine">الغرامة لكل كم بعد الحد الأقصى (ج.م) *</label>
+        <input
+          id="p-fine"
+          type="number"
+          class="form-control"
+          formControlName="overdueFinePerKm"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.overdueFinePerKm" label="الغرامة لكل كم" />
+      </div>
+      <div class="pf-example">
+        <app-icon name="cash" [size]="18" />
+        <span>
+          مثال: تجاوز <span class="ltr">{{ exampleKm }}</span> كم =
+          <strong class="amount amount--debt">{{ fineExample() }}</strong>
+        </span>
+      </div>
+
+      <h3 class="form-section-title">من يصله كل تنبيه؟</h3>
+
+      <div class="span-2 pf-recipients">
+        @for (row of recipientRows; track row.control; let i = $index) {
+          <div class="pf-recipients__row anim-fade-up" [style.--i]="i">
+            <app-enum-chip [map]="LEVEL" [value]="row.level" />
+            <app-recipients-picker
+              [label]="LEVEL[row.level].label"
+              [value]="recipients(row.control)"
+              (valueChange)="setRecipients(row.control, $event)"
+            />
+          </div>
+        }
+      </div>
+
+      <h3 class="form-section-title">التذكير</h3>
+
+      <div>
+        <label class="form-label" for="p-remind">تكرار تنبيه الحد الحرج كل (ساعة) *</label>
+        <input
+          id="p-remind"
+          type="number"
+          class="form-control"
+          formControlName="criticalReminderIntervalHours"
+          min="1"
+          step="1"
+        />
+        <app-form-error
+          [control]="form.controls.criticalReminderIntervalHours"
+          label="فترة التذكير"
+        />
+      </div>
+      <div class="pf-check">
+        <div class="form-check">
+          <input
+            id="p-skip"
+            class="form-check-input"
+            type="checkbox"
+            formControlName="notifyOnlyHighestWhenSkipping"
+          />
+          <label class="form-check-label" for="p-skip">
+            عند تخطي أكثر من حد دفعة واحدة، أرسل تنبيه المستوى الأعلى فقط
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        {{ policy() ? 'حفظ التعديلات' : 'إضافة السياسة' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

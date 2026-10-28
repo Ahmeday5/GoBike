@@ -1,0 +1,409 @@
+/* ══════════════════════════════════════════════════════════════
+   BOOTSTRAP OVERRIDES — truly global, affects the whole app.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  border-radius: var(--rl);
+  padding: 1.125rem;
+  margin-bottom: 0.875rem;
+  box-shadow: var(--shadow);
+  transition:
+    box-shadow var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out),
+    border-color var(--dur-3);
+
+  &.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brd2);
+  }
+}
+
+/* ── BUTTONS ── */
+.btn {
+  --btn-bg: var(--bg2);
+  --btn-fg: var(--txt);
+  --btn-brd: var(--brd2);
+
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-family: var(--font-base);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: var(--r);
+  padding: 0.5rem 1rem;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-brd);
+  color: var(--btn-fg);
+  transition:
+    background var(--dur-2) var(--ease-out),
+    color var(--dur-2),
+    border-color var(--dur-2),
+    box-shadow var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+
+  &:hover {
+    background: var(--bg3);
+    color: var(--txt);
+    border-color: var(--brd2);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  &:focus {
+    box-shadow: none;
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 4px var(--primary-ring);
+    outline: none;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  &-sm {
+    padding: 0.3125rem 0.75rem;
+    font-size: var(--fs-xs);
+    border-radius: var(--r-sm);
+  }
+  &-lg {
+    padding: 0.75rem 1.375rem;
+    font-size: var(--fs-md);
+    border-radius: var(--rl);
+  }
+
+  /* Solid color variants share one recipe. */
+  @each $name, $color in (gr: --gr, re: --re, am: --am, te: --te, pu: --pu, bl: --bl) {
+    &-#{$name} {
+      background: var(#{$color});
+      color: #fff;
+      border-color: var(#{$color});
+      &:hover,
+      &:focus {
+        background: var(#{$color});
+        color: #fff;
+        border-color: var(#{$color});
+        filter: brightness(1.08);
+      }
+    }
+  }
+
+  /* Primary call-to-action — brand gradient, lift + shine on hover. */
+  &-brand {
+    background: var(--primary-gradient);
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    color: var(--on-primary);
+    border-color: transparent;
+    box-shadow: var(--shadow-brand);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: translateX(-120%) skewX(-18deg);
+      pointer-events: none;
+    }
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: var(--primary-gradient);
+      background-size: 160% 160%;
+      background-position: 100% 50%;
+      color: var(--on-primary);
+      border-color: transparent;
+      transform: translateY(-2px);
+      box-shadow:
+        0 14px 28px -10px var(--primary-ring),
+        var(--shadow-brand);
+
+      &::after {
+        animation: shimmer 0.9s var(--ease-out);
+      }
+    }
+    &:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+  }
+
+  &-ghost {
+    --btn-bg: transparent;
+    --btn-brd: transparent;
+    color: var(--txt2);
+    &:hover {
+      background: var(--bg3);
+      color: var(--txt);
+    }
+  }
+}
+
+/* ── BADGE ── */
+.badge {
+  font-size: var(--fs-xs);
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--r-full);
+  font-weight: 600;
+  &.bok {
+    background: var(--gr-l);
+    color: var(--gr);
+  }
+  &.bwarn {
+    background: var(--am-l);
+    color: var(--am);
+  }
+  &.bbad {
+    background: var(--re-l);
+    color: var(--re);
+  }
+  &.binfo {
+    background: var(--bl-l);
+    color: var(--bl-d);
+  }
+  &.bpu {
+    background: var(--pu-l);
+    color: var(--pu);
+  }
+  &.bte {
+    background: var(--te-l);
+    color: var(--te);
+  }
+  &.bpi {
+    background: var(--pi-l);
+    color: var(--pi);
+  }
+}
+
+/* Sidebar live-badge color variants (used by badge.constants.ts) */
+.sbb {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.6563rem;
+  min-width: 1.25rem;
+  padding: 1px 0.4375rem;
+  border-radius: var(--r-full);
+  margin-inline-start: auto;
+  font-weight: 700;
+  text-align: center;
+  flex-shrink: 0;
+  animation: pop-in var(--dur-4) var(--ease-spring) both;
+  &-am {
+    background: var(--am);
+  }
+  &-gr {
+    background: var(--gr);
+  }
+  &-bl {
+    background: var(--bl);
+  }
+}
+
+/* ── ALERT ── */
+.alert {
+  border-radius: var(--r);
+  padding: 0.625rem 0.875rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  border: 1px solid transparent;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  animation: fade-down var(--dur-3) var(--ease-out) both;
+  &-danger {
+    background: var(--re-l);
+    color: var(--re);
+    border-color: color-mix(in srgb, var(--re) 18%, transparent);
+  }
+  &-warning {
+    background: var(--am-l);
+    color: var(--am);
+  }
+  &-success {
+    background: var(--gr-l);
+    color: var(--gr);
+  }
+  &-primary {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+}
+
+/* ── PROGRESS ── */
+.progress {
+  background: var(--bg3);
+  border-radius: var(--r-full);
+  height: 0.375rem;
+  overflow: hidden;
+  margin-top: 0.25rem;
+  &-bar {
+    border-radius: var(--r-full);
+    background: var(--primary-gradient);
+    transition: width 0.6s var(--ease-out);
+  }
+}
+
+/* ── FORMS ── */
+.form-label {
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+.form-control,
+.form-select {
+  font-family: var(--font-base);
+  font-size: var(--fs-base);
+  color: var(--txt);
+  background-color: var(--bg2);
+  border: 1px solid var(--brd2);
+  border-radius: var(--r);
+  padding: 0.5625rem 0.75rem;
+  transition:
+    border-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out),
+    background-color var(--dur-2);
+
+  &::placeholder {
+    color: var(--txt3);
+  }
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--txt3);
+  }
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-ring);
+    background-color: var(--bg2);
+    color: var(--txt);
+  }
+  &.is-invalid {
+    border-color: var(--re);
+    &:focus {
+      box-shadow: 0 0 0 4px var(--re-l);
+    }
+  }
+  &.fl-ro {
+    background-color: var(--bg3) !important;
+  }
+
+  /* Browser autofill paints its own pale-blue background, which ignores
+     `background-color`. The standard override is a huge inset shadow in our
+     surface color; the long transition stops the browser repainting it. */
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover {
+    -webkit-text-fill-color: var(--txt);
+    caret-color: var(--txt);
+    box-shadow: 0 0 0 1000px var(--bg2) inset;
+    transition: background-color 600000s 0s;
+  }
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--txt);
+    box-shadow:
+      0 0 0 1000px var(--bg2) inset,
+      0 0 0 4px var(--primary-ring);
+  }
+}
+/* Input with a leading icon:
+   <div class="input-icon"><app-icon class="input-icon__glyph" …/><input class="form-control" …/></div>
+   Works with <app-password-input> too (its inner input is a .form-control). */
+.input-icon {
+  position: relative;
+
+  .input-icon__glyph {
+    position: absolute;
+    z-index: 2;
+    inset-inline-start: 0.8125rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--txt3);
+    pointer-events: none;
+    transition:
+      color var(--dur-2),
+      transform var(--dur-3) var(--ease-spring);
+  }
+  .form-control {
+    padding-inline-start: 2.625rem;
+  }
+  /* A left-to-right field (email, phone) inside the RTL form: its own "start" is
+     the left, but the icon sits on the wrapper's start — the right. Reserve the
+     icon space on the field's end side instead. */
+  .form-control[dir='ltr'] {
+    padding-inline-start: 0.75rem;
+    padding-inline-end: 2.625rem;
+  }
+  &:focus-within .input-icon__glyph {
+    color: var(--primary);
+    transform: translateY(-50%) scale(1.12);
+  }
+}
+
+.form-check-input {
+  border-color: var(--brd2);
+  background-color: var(--bg2);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-2),
+    border-color var(--dur-2),
+    box-shadow var(--dur-2);
+  &:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-ring);
+  }
+}
+.form-check-label {
+  cursor: pointer;
+}
+.invalid-feedback {
+  font-size: var(--fs-xs);
+}
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  border-bottom-color: var(--brd);
+  margin-bottom: 1rem;
+  .nav-link {
+    font-size: var(--fs-sm);
+    color: var(--txt2);
+    font-weight: 600;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    border-radius: 0;
+    transition:
+      color var(--dur-2),
+      border-color var(--dur-2);
+    &.active,
+    &.on {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: none;
+    }
+    &:hover:not(.active) {
+      color: var(--txt);
+      border-bottom-color: var(--brd2);
+    }
+  }
+}
+
+/* ── DROPDOWN-ish surfaces built on Bootstrap ── */
+.dropdown-menu {
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  border-radius: var(--rl);
+  box-shadow: var(--shadow-lg);
+}

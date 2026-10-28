@@ -1,0 +1,79 @@
+<div class="rp" [class.rp--open]="open()">
+  <button
+    type="button"
+    class="form-select rp__control"
+    [class.is-invalid]="invalid()"
+    [attr.id]="inputId()"
+    [disabled]="disabled()"
+    [attr.aria-expanded]="open()"
+    (click)="toggle()"
+  >
+    <app-icon class="rp__lead" [name]="icon()" [size]="16" />
+    @if (selected(); as s) {
+      <span class="rp__value">
+        <span class="rp__label">{{ s.label }}</span>
+        @if (s.hint) {
+          <span class="rp__hint">{{ s.hint }}</span>
+        }
+      </span>
+    } @else {
+      <span class="rp__placeholder">{{ placeholder() }}</span>
+    }
+  </button>
+  @if (selected() && !disabled()) {
+    <button type="button" class="rp__clear" aria-label="مسح الاختيار" (click)="clear($event)">
+      <app-icon name="close" [size]="12" />
+    </button>
+  }
+
+  @if (open()) {
+    <div class="rp__panel">
+      <div class="rp__search">
+        <app-icon name="search" [size]="15" />
+        <input
+          #searchBox
+          type="search"
+          class="form-control"
+          [placeholder]="searchPlaceholder()"
+          [attr.aria-label]="searchPlaceholder()"
+          [value]="term()"
+          (input)="onTerm($event)"
+          (keydown)="onKeydown($event)"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="rp__list">
+        @if (results().loading) {
+          @for (s of [1, 2, 3]; track s) {
+            <div class="rp__skeleton"><span class="skeleton"></span><span class="skeleton"></span></div>
+          }
+        } @else {
+          @for (o of results().items; track o.value; let i = $index) {
+            <button
+              type="button"
+              class="rp__option"
+              [class.rp__option--active]="i === active()"
+              [class.rp__option--selected]="o.value === selected()?.value"
+              [style.--i]="i"
+              (click)="choose(o)"
+              (mouseenter)="active.set(i)"
+            >
+              <span class="rp__option-label">{{ o.label }}</span>
+              @if (o.hint) {
+                <span class="rp__option-hint">{{ o.hint }}</span>
+              }
+              @if (o.value === selected()?.value) {
+                <app-icon class="rp__check" name="check" [size]="14" />
+              }
+            </button>
+          } @empty {
+            <p class="rp__empty">
+              {{ term() ? 'لا توجد نتائج مطابقة' : 'لا توجد عناصر متاحة' }}
+            </p>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

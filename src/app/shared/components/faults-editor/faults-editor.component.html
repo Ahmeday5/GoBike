@@ -1,0 +1,94 @@
+<div class="fe">
+  @if (summary().total > 0) {
+    <div class="fe__summary">
+      <span class="fe__count">
+        <app-icon name="alert" [size]="14" />
+        {{ summary().total }} عطل
+      </span>
+      @if (summary().critical) {
+        <span class="fe__pill fe__pill--critical">{{ summary().critical }} حرج</span>
+      }
+      @if (summary().major) {
+        <span class="fe__pill fe__pill--major">{{ summary().major }} جسيم</span>
+      }
+      @if (showFixed()) {
+        <span class="fe__progress" [attr.aria-label]="'تم إصلاح ' + summary().fixed + ' من ' + summary().total">
+          <span class="fe__progress-bar"><span [style.width.%]="fixedPercent()"></span></span>
+          <span class="fe__progress-text">
+            تم إصلاح <strong>{{ summary().fixed }}</strong> من {{ summary().total }}
+          </span>
+        </span>
+      }
+    </div>
+  }
+
+  <ol class="fe__list">
+    @for (row of rows(); track row; let i = $index) {
+      <li
+        class="fe__row"
+        [class.fe__row--leaving]="isLeaving(row)"
+        [class.fe__row--fixed]="showFixed() && row.controls.isFixed.value"
+        [attr.data-sev]="row.controls.severity.value"
+        [formGroup]="row"
+      >
+        <span class="fe__index" aria-hidden="true">{{ i + 1 }}</span>
+
+        <div class="fe__desc">
+          <label class="visually-hidden" [for]="idPrefix() + '-desc-' + i">وصف العطل {{ i + 1 }}</label>
+          <input
+            [id]="idPrefix() + '-desc-' + i"
+            class="form-control"
+            formControlName="description"
+            placeholder="صف العطل… مثال: كسر في المرآة اليمنى"
+            autocomplete="off"
+          />
+          <app-form-error [control]="row.controls.description" label="وصف العطل" />
+        </div>
+
+        <div class="fe__sev">
+          <label class="visually-hidden" [for]="idPrefix() + '-sev-' + i">درجة العطل {{ i + 1 }}</label>
+          <select
+            [id]="idPrefix() + '-sev-' + i"
+            class="form-select"
+            formControlName="severity"
+          >
+            @for (o of severityOptions; track o.value) {
+              <option [value]="o.value">{{ o.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (showFixed()) {
+          <label class="fe__fixed" [for]="idPrefix() + '-fixed-' + i">
+            <input
+              [id]="idPrefix() + '-fixed-' + i"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="isFixed"
+              />
+            <span>تم الإصلاح</span>
+          </label>
+        }
+
+        <button
+          type="button"
+          class="fe__remove"
+          [attr.aria-label]="'حذف العطل ' + (i + 1)"
+          (click)="remove(row)"
+        >
+          <app-icon name="trash" [size]="15" />
+        </button>
+      </li>
+    } @empty {
+      <li class="fe__empty">
+        <app-icon name="check-circle" [size]="18" />
+        <span>{{ emptyHint() }}</span>
+      </li>
+    }
+  </ol>
+
+  <button type="button" class="btn btn-sm fe__add" (click)="add()">
+    <app-icon name="plus" [size]="14" />
+    إضافة عطل
+  </button>
+</div>

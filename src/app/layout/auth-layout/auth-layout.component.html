@@ -1,0 +1,46 @@
+<div class="auth-shell">
+  <!-- Form side -->
+  <main class="auth-main">
+    <header class="auth-main__top">
+      <app-logo class="auth-main__logo" [height]="44" />
+      <app-theme-toggle class="auth-main__theme" />
+    </header>
+
+    <div class="auth-main__body">
+      <router-outlet />
+    </div>
+
+    <footer class="auth-main__footer">© {{ year }} {{ appName }}. جميع الحقوق محفوظة.</footer>
+  </main>
+
+  <!-- Brand side (decorative) -->
+  <aside class="hero" aria-hidden="true">
+    <div class="hero__blob hero__blob--1"></div>
+    <div class="hero__blob hero__blob--2"></div>
+    <div class="hero__blob hero__blob--3"></div>
+    <div class="hero__grid"></div>
+
+    <app-motorcycle-scene class="hero__scene" />
+
+    <div class="hero__content">
+      <div class="hero__logo-card">
+        <app-logo [height]="76" />
+      </div>
+
+      <h2 class="hero__title">كل رحلة تبدأ من هنا</h2>
+      <p class="hero__text">لوحة تحكم واحدة لإدارة الدراجات والرحلات والمستخدمين بكفاءة وسرعة.</p>
+
+      <ul class="hero__list">
+        @for (item of highlights; track item.title; let i = $index) {
+          <li class="hero__item" [style.--i]="i">
+            <span class="hero__item-icon"><app-icon [name]="item.icon" [size]="20" /></span>
+            <span>
+              <strong>{{ item.title }}</strong>
+              <small>{{ item.text }}</small>
+            </span>
+          </li>
+        }
+      </ul>
+    </div>
+  </aside>
+</div>

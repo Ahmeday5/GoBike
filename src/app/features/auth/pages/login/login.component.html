@@ -1,0 +1,68 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <span class="auth-badge"><app-icon name="bike" [size]="28" /></span>
+    <h1 class="auth-title">مرحبًا بعودتك 👋</h1>
+    <p class="auth-subtitle">سجّل الدخول لمتابعة إدارة أسطولك</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="auth-field">
+        <label class="form-label" for="email">البريد الإلكتروني</label>
+        <div class="input-icon">
+          <app-icon class="input-icon__glyph" name="mail" [size]="18" />
+          <input
+            id="email"
+            type="email"
+            dir="ltr"
+            class="form-control"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="name@company.com"
+            [class.is-invalid]="isInvalid('email')"
+          />
+        </div>
+        <app-form-error [control]="form.controls.email" label="البريد الإلكتروني" />
+      </div>
+
+      <div class="auth-field">
+        <label class="form-label" for="password">كلمة المرور</label>
+        <div class="input-icon">
+          <app-icon class="input-icon__glyph" name="lock" [size]="18" />
+          <app-password-input
+            inputId="password"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+        </div>
+        <app-form-error [control]="form.controls.password" label="كلمة المرور" />
+      </div>
+
+      <div class="auth-row">
+        <div class="form-check mb-0">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="rememberMe"
+            formControlName="rememberMe"
+          />
+          <label class="form-check-label" for="rememberMe">تذكرني</label>
+        </div>
+      </div>
+
+      @if (serverError(); as msg) {
+        <div class="alert alert-danger auth-alert" role="alert">
+          <span>{{ msg }}</span>
+        </div>
+      }
+
+      <button type="submit" class="btn btn-brand btn-lg auth-submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span>جارٍ تسجيل الدخول…</span>
+        } @else {
+          <span>تسجيل الدخول</span>
+        }
+      </button>
+    </form>
+  </div>
+</div>

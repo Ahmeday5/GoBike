@@ -1,0 +1,191 @@
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — the only place raw colors / sizes are allowed.
+   Brand palette is derived from the GoBiky logo:
+     red      #BE3232  → --brand-500
+     charcoal #434343  → --ink-700
+   Components read the *semantic* tokens (--primary, --bg2, --txt…),
+   never the scales directly, so the dark theme is a token swap.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand scale (logo red) ── */
+  --brand-50: #fdf3f3;
+  --brand-100: #fbe5e5;
+  --brand-200: #f5c8c8;
+  --brand-300: #eb9d9d;
+  --brand-400: #d96565;
+  --brand-500: #be3232;
+  --brand-600: #a52929;
+  --brand-700: #872222;
+  --brand-800: #6a1c1c;
+  --brand-900: #4a1515;
+
+  /* ── Ink scale (logo charcoal) ── */
+  --ink-50: #f7f7f8;
+  --ink-100: #efeff1;
+  --ink-200: #e2e2e5;
+  --ink-300: #c9c9cd;
+  --ink-400: #9d9da3;
+  --ink-500: #737378;
+  --ink-600: #57575c;
+  --ink-700: #434343;
+  --ink-800: #2d2d2f;
+  --ink-900: #1f1f21;
+  --ink-950: #141415;
+
+  /* ── Semantic: brand ── */
+  --primary: var(--brand-500);
+  --primary-hover: var(--brand-600);
+  --primary-active: var(--brand-700);
+  --primary-soft: var(--brand-50);
+  --primary-soft-2: var(--brand-100);
+  --primary-ring: rgba(190, 50, 50, 0.22);
+  --on-primary: #fff;
+  --primary-gradient: linear-gradient(
+    135deg,
+    #d43c3c 0%,
+    var(--brand-500) 45%,
+    var(--brand-700) 100%
+  );
+
+  /* ── Semantic: surfaces & text ── */
+  --bg: #f5f5f7;
+  --bg2: #ffffff;
+  --bg3: var(--ink-100);
+  --bg-glass: rgba(255, 255, 255, 0.78);
+  --txt: var(--ink-900);
+  --txt2: var(--ink-600);
+  --txt3: var(--ink-400);
+  --brd: rgba(31, 31, 33, 0.08);
+  --brd2: rgba(31, 31, 33, 0.15);
+
+  /* ── Status colors (kept distinct from the brand red) ── */
+  --gr: #15803d;
+  --gr-l: #e8f6ec;
+  --am: #b45309;
+  --am-l: #fdf3e2;
+  --re: #dc2626;
+  --re-l: #fdecec;
+  --bl: #2563eb;
+  --bl-l: #e9effd;
+  --bl-d: #1d4ed8;
+  --te: #0f766e;
+  --te-l: #e3f5f2;
+  --pu: #6d28d9;
+  --pu-l: #f0eafd;
+  --pi: #be185d;
+  --pi-l: #fce8f1;
+
+  /* ── Sidebar (always dark — echoes the logo's charcoal) ── */
+  --sb-bg: linear-gradient(180deg, #232325 0%, #1a1a1c 55%, #141415 100%);
+  --sb-txt: rgba(255, 255, 255, 0.62);
+  --sb-txt-strong: #ffffff;
+  --sb-muted: rgba(255, 255, 255, 0.34);
+  --sb-hover: rgba(255, 255, 255, 0.06);
+  --sb-brd: rgba(255, 255, 255, 0.07);
+
+  /* ── Elevation ── */
+  --shadow-xs: 0 1px 2px rgba(20, 20, 21, 0.06);
+  --shadow: 0 1px 3px rgba(20, 20, 21, 0.06), 0 1px 2px rgba(20, 20, 21, 0.04);
+  --shadow-md: 0 8px 24px -8px rgba(20, 20, 21, 0.14), 0 2px 6px rgba(20, 20, 21, 0.05);
+  --shadow-lg: 0 24px 48px -16px rgba(20, 20, 21, 0.22), 0 4px 12px rgba(20, 20, 21, 0.06);
+  --shadow-brand: 0 10px 24px -8px rgba(190, 50, 50, 0.55);
+
+  /* ── Shape ── */
+  --r-sm: 0.5rem;
+  --r: 0.625rem;
+  --rl: 0.875rem;
+  --r-xl: 1.25rem;
+  --r-full: 999px;
+
+  /* ── Typography ──
+     Rendered sizes at the default 0.9 scale are in the comments. The two
+     smallest steps are a bit larger than a straight scale-down would give,
+     because Arabic glyphs lose legibility below ~11px. */
+  --font-base: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --fs-xs: 0.78125rem; /* ≈ 11.3px */
+  --fs-sm: 0.84375rem; /* ≈ 12.2px */
+  --fs-base: 0.90625rem; /* ≈ 13px */
+  --fs-md: 0.96875rem; /* ≈ 14px */
+  --fs-lg: 1.125rem; /* ≈ 16.2px */
+  --fs-xl: 1.375rem; /* ≈ 19.8px */
+  --fs-2xl: 1.75rem; /* ≈ 25.2px */
+
+  /* ── Motion ── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 520ms;
+
+  /* ── Layout ── */
+  --topbar-h: 4.25rem; /* ≈ 61px */
+  --sb-w: 16.75rem; /* ≈ 241px */
+  --sb-w-collapsed: 5.25rem; /* ≈ 76px */
+  --app-height: 100dvh;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UI SCALE — the single density knob.
+   Every size in the app is in rem, so the root font size scales the
+   whole interface proportionally (text, spacing, controls, sidebar,
+   topbar, icons), like browser zoom but owned by the design.
+     1    → roomy (16px base)
+     0.9  → default, comfortable dashboard density
+     0.85 → compact
+   It's a percentage, so users who raised their browser's default font
+   size for accessibility still get a proportionally larger UI.
+   Borders, shadows and breakpoints stay in px on purpose.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --ui-scale: 0.9;
+  font-size: calc(var(--ui-scale) * 100%);
+}
+
+/* ── Dark theme (ThemeService sets <html data-theme="dark">) ── */
+:root[data-theme='dark'] {
+  --primary: #dc4a4a;
+  --primary-hover: #e46464;
+  --primary-active: #c53b3b;
+  --primary-soft: rgba(220, 74, 74, 0.12);
+  --primary-soft-2: rgba(220, 74, 74, 0.2);
+  --primary-ring: rgba(220, 74, 74, 0.3);
+  --primary-gradient: linear-gradient(135deg, #e25555 0%, #c83a3a 50%, #9b2a2a 100%);
+
+  --bg: #111112;
+  --bg2: #19191b;
+  --bg3: #232325;
+  --bg-glass: rgba(25, 25, 27, 0.72);
+  --txt: #ededee;
+  --txt2: #b4b4b8;
+  --txt3: #7d7d83;
+  --brd: rgba(255, 255, 255, 0.07);
+  --brd2: rgba(255, 255, 255, 0.14);
+
+  --gr: #4ade80;
+  --gr-l: rgba(74, 222, 128, 0.12);
+  --am: #fbbf24;
+  --am-l: rgba(251, 191, 36, 0.12);
+  --re: #f87171;
+  --re-l: rgba(248, 113, 113, 0.12);
+  --bl: #60a5fa;
+  --bl-l: rgba(96, 165, 250, 0.12);
+  --bl-d: #93c5fd;
+  --te: #2dd4bf;
+  --te-l: rgba(45, 212, 191, 0.12);
+  --pu: #a78bfa;
+  --pu-l: rgba(167, 139, 250, 0.12);
+  --pi: #f472b6;
+  --pi-l: rgba(244, 114, 182, 0.12);
+
+  --sb-bg: linear-gradient(180deg, #161617 0%, #111112 55%, #0c0c0d 100%);
+  --sb-brd: rgba(255, 255, 255, 0.06);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+  --shadow-brand: 0 10px 24px -8px rgba(220, 74, 74, 0.5);
+}

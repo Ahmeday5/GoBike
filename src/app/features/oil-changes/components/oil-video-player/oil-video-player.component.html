@@ -1,0 +1,57 @@
+@switch (state()) {
+  @case ('ready') {
+    <video class="vp__video" [src]="src()" controls playsinline preload="metadata"></video>
+  }
+  @case ('loading') {
+    <div class="vp__stage vp__stage--loading" role="status" aria-live="polite">
+      <span class="vp__spinner"><app-icon name="video" [size]="30" /></span>
+      <strong>جارٍ تحميل الفيديو…</strong>
+      <div
+        class="vp__bar"
+        role="progressbar"
+        aria-label="تقدم تحميل الفيديو"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="percent()"
+      >
+        <span
+          class="vp__bar-fill"
+          [class.vp__bar-fill--indeterminate]="percent() === null"
+          [style.width.%]="percent() ?? 35"
+        ></span>
+      </div>
+      <span class="vp__meta ltr">
+        {{ loaded() | bytes }}
+        @if (total() ?? sizeBytes(); as t) {
+          / {{ t | bytes }}
+        }
+        @if (percent() !== null) {
+          · {{ percent() }}%
+        }
+      </span>
+    </div>
+  }
+  @case ('deleted') {
+    <div class="vp__stage">
+      <app-empty-state
+        icon="video"
+        title="تم حذف الفيديو"
+        [text]="
+          expired()
+            ? 'انتهت مهلة المراجعة (7 أيام) دون قرار، فحُذف الفيديو تلقائيًا. على السائق رفع فيديو جديد من التطبيق.'
+            : 'تُحذف الفيديوهات تلقائيًا بعد اتخاذ القرار وضمن التنظيف الأسبوعي، لذا لم يعد متاحًا للمشاهدة.'
+        "
+      />
+    </div>
+  }
+  @case ('error') {
+    <div class="vp__stage">
+      <app-empty-state icon="alert" title="تعذّر تحميل الفيديو" [text]="errorMessage()">
+        <button type="button" class="btn btn-sm" (click)="reload()">
+          <app-icon name="refresh" [size]="14" />
+          إعادة المحاولة
+        </button>
+      </app-empty-state>
+    </div>
+  }
+}

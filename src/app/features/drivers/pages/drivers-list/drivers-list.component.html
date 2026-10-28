@@ -1,0 +1,189 @@
+<app-page-header title="السائقون" subtitle="بيانات السائقين وحسابات التطبيق وحالة الإيجار">
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Drivers.Manage"
+    (click)="formOpen.set(true)"
+  >
+    <app-icon name="plus" [size]="16" />
+    إضافة سائق
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث بالاسم أو الهاتف أو الرقم القومي أو الرخصة…"
+  />
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().status"
+    (change)="select('status', $event)"
+  >
+    <option value="">كل الحالات</option>
+    @for (o of statusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  @if (staff().length) {
+    <select
+      class="form-select"
+      aria-label="المشرف"
+      [value]="f().supervisorUserId"
+      (change)="select('supervisorUserId', $event)"
+    >
+      <option value="">كل المشرفين</option>
+      @for (u of staff(); track u.id) {
+        <option [value]="u.id">{{ u.fullName }}</option>
+      }
+    </select>
+  }
+
+  <select
+    class="form-select"
+    aria-label="الإيجار"
+    [value]="f().hasActiveAssignment"
+    (change)="select('hasActiveAssignment', $event)"
+  >
+    <option value="">كل السائقين</option>
+    <option value="true">معه موتوسيكل الآن</option>
+    <option value="false">بدون إيجار حالي</option>
+  </select>
+
+  <select
+    class="form-select"
+    aria-label="حساب التطبيق"
+    [value]="f().hasAppAccess"
+    (change)="select('hasAppAccess', $event)"
+  >
+    <option value="">كل الحسابات</option>
+    <option value="true">لديه حساب تطبيق</option>
+    <option value="false">بدون حساب تطبيق</option>
+  </select>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (drivers.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="drivers.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="drivers.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="users"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا يوجد سائقون بعد'"
+  [emptyText]="
+    hasFilters() ? 'جرّب تغيير كلمات البحث أو الفلاتر' : 'أضف أول سائق لإنشاء حساب تطبيق له'
+  "
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="drivers.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-driver-form-dialog
+  [open]="formOpen()"
+  (closed)="formOpen.set(false)"
+  (created)="onCreated($event)"
+/>
+
+<app-credentials-dialog
+  [open]="!!created()"
+  [credentials]="created()?.credentials ?? null"
+  [driverName]="created()?.driver?.fullName"
+  title="تمت إضافة السائق"
+  (closed)="onCredentialsClosed()"
+/>
+
+<ng-template #nameTpl let-d>
+  <strong>{{ d.fullName }}</strong>
+  @if (d.nationalId) {
+    <div class="muted ltr" style="font-size: var(--fs-xs)">{{ d.nationalId }}</div>
+  }
+</ng-template>
+<ng-template #phoneTpl let-d><span class="ltr">{{ d.phoneNumber }}</span></ng-template>
+<ng-template #statusTpl let-d>
+  <span [attr.title]="d.statusReason || null">
+    <app-enum-chip [map]="STATUS" [value]="d.status" [small]="true" />
+  </span>
+  @if (d.statusReason) {
+    <div
+      class="muted text-truncate"
+      style="font-size: var(--fs-xs); max-width: 12rem"
+      [attr.title]="d.statusReason"
+    >
+      {{ d.statusReason }}
+    </div>
+  }
+</ng-template>
+<ng-template #appTpl let-d>
+  <div class="d-flex flex-wrap align-items-center gap-1">
+    @if (d.hasAppAccess) {
+      <app-chip tone="success" icon="key" [small]="true">لديه دخول</app-chip>
+    } @else {
+      <app-chip tone="neutral" icon="lock" [small]="true">بدون دخول</app-chip>
+    }
+    @if (d.hasPushDevice) {
+      <app-chip tone="info" icon="bell" [small]="true">الإشعارات مفعّلة</app-chip>
+    } @else {
+      <span title="لم يسجّل الدخول إلى التطبيق بعد، فلن تصله الإشعارات">
+        <app-chip tone="neutral" icon="minus-circle" [small]="true">الإشعارات متوقفة</app-chip>
+      </span>
+    }
+  </div>
+  @if (d.lastAppSeenAtUtc) {
+    <div class="muted" style="font-size: var(--fs-xs)">
+      آخر ظهور {{ d.lastAppSeenAtUtc | cairoDate: 'relative' }}
+    </div>
+  }
+</ng-template>
+<ng-template #rentalTpl let-d>
+  @if (d.hasActiveAssignment) {
+    <app-chip tone="info" icon="bike" [small]="true">معه موتوسيكل</app-chip>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #licenseTpl let-d><app-license-expiry [date]="d.licenseExpiryDate" /></ng-template>

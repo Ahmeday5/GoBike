@@ -1,0 +1,126 @@
+<app-page-header title="الموتوسيكلات" subtitle="كل موتوسيكلات الأسطول وحالتها">
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Motorcycles.Manage"
+    (click)="formOpen.set(true)"
+  >
+    <app-icon name="plus" [size]="16" />
+    إضافة موتوسيكل
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث برقم اللوحة أو الكود أو الماركة…"
+  />
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().status"
+    (change)="select('status', $event)"
+  >
+    <option value="">كل الحالات</option>
+    @for (o of statusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  <select
+    class="form-select"
+    aria-label="جهاز التتبع"
+    [value]="f().hasGpsDevice"
+    (change)="select('hasGpsDevice', $event)"
+  >
+    <option value="">كل الموتوسيكلات</option>
+    <option value="true">مزودة بجهاز تتبع</option>
+    <option value="false">بدون جهاز تتبع</option>
+  </select>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (motorcycles.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="motorcycles.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="motorcycles.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="bike"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا توجد موتوسيكلات بعد'"
+  [emptyText]="hasFilters() ? 'جرّب تغيير كلمات البحث أو الفلاتر' : ''"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="motorcycles.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-motorcycle-form-dialog
+  [open]="formOpen()"
+  (closed)="formOpen.set(false)"
+  (saved)="onSaved($event)"
+/>
+
+<ng-template #plateTpl let-m>
+  <strong class="ltr">{{ m.plateNumber }}</strong>
+  @if (m.internalCode) {
+    <div class="muted" style="font-size: var(--fs-xs)">{{ m.internalCode }}</div>
+  }
+</ng-template>
+<ng-template #statusTpl let-m><app-enum-chip [map]="STATUS" [value]="m.status" /></ng-template>
+<ng-template #healthTpl let-m>
+  @if (m.health) {
+    <app-enum-chip [map]="HEALTH" [value]="m.health" />
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #gpsTpl let-m>
+  @if (m.hasGpsDevice) {
+    <app-chip tone="success" icon="map-pin" [small]="true">مزود</app-chip>
+  } @else {
+    <app-chip tone="neutral" icon="minus-circle" [small]="true">لا يوجد</app-chip>
+  }
+</ng-template>
+<ng-template #createdTpl let-m>{{ m.createdAtUtc | cairoDate: 'date' }}</ng-template>

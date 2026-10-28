@@ -1,0 +1,86 @@
+@if (submissions.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="submissions.reload()">إعادة المحاولة</button>
+  </div>
+} @else if (submissions.initialLoading()) {
+  <div class="oil-grid" aria-busy="true">
+    @for (s of skeletons; track s) {
+      <div class="oil-card">
+        <span class="skeleton" style="width: 40%; height: 1rem"></span>
+        <span class="skeleton" style="width: 70%; height: 0.875rem"></span>
+        <span class="skeleton" style="width: 55%; height: 0.875rem"></span>
+      </div>
+    }
+  </div>
+} @else if (!rows().length) {
+  <div class="panel">
+    <app-empty-state
+      icon="video"
+      title="لم يرفع السائق أي فيديو لتغيير الزيت"
+      text="تظهر هنا الفيديوهات التي يرفعها السائق من التطبيق وقرار المراجعة عليها."
+    />
+  </div>
+} @else {
+  <div class="oil-grid" [class.oil-grid--busy]="submissions.loading()">
+    @for (s of rows(); track s.id; let i = $index) {
+      <a
+        class="oil-card oil-card--link anim-fade-up"
+        [style.--i]="i"
+        [routerLink]="link(s.id)"
+        [class.oil-card--fined]="(s.fineAmount ?? 0) > 0"
+      >
+        <div class="oil-card__head">
+          <app-enum-chip [map]="STATUS" [value]="s.status" [small]="true" />
+          <span class="muted oil-card__date">{{ s.submittedAtUtc | cairoDate }}</span>
+        </div>
+        <div class="oil-card__plate">
+          <app-icon name="bike" [size]="15" />
+          <span class="ltr">{{ s.plateNumber || '—' }}</span>
+        </div>
+        <dl class="oil-card__kv">
+          <div>
+            <dt>منذ آخر تغيير</dt>
+            <dd>{{ s.kmAtSubmit | km }}</dd>
+          </div>
+          <div>
+            <dt>العداد</dt>
+            <dd>{{ s.odometerKmAtSubmit | km }}</dd>
+          </div>
+          <div>
+            <dt>الغرامة</dt>
+            <dd>
+              @if ((s.fineAmount ?? 0) > 0) {
+                <span class="amount amount--debt">{{ s.fineAmount | money }}</span>
+                @if (s.finedKm) {
+                  <span class="muted oil-card__fine-km">({{ s.finedKm | km }})</span>
+                }
+              } @else {
+                <span class="muted">لا توجد</span>
+              }
+            </dd>
+          </div>
+        </dl>
+        @if (s.status === 'Rejected' && s.rejectReason) {
+          <p class="oil-card__reject">
+            <app-icon name="alert" [size]="13" />
+            {{ s.rejectReason }}
+          </p>
+        }
+        <span class="oil-card__go" aria-hidden="true"><app-icon name="chevron-left" [size]="16" /></span>
+      </a>
+    }
+  </div>
+
+  @if (submissions.value(); as p) {
+    <app-pagination
+      [pageIndex]="state().oilPage"
+      [pageSize]="pageSize"
+      [count]="p.count"
+      [totalPages]="p.totalPages"
+      [showPageSize]="false"
+      [disabled]="submissions.loading()"
+      (pageChange)="url.patch({ oilPage: $event })"
+    />
+  }
+}

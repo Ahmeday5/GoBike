@@ -1,0 +1,130 @@
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title"><app-icon name="archive" [size]="18" /> المستندات</h2>
+    <button type="button" class="btn btn-sm btn-brand" *appHasPermission="P.Documents.Manage" (click)="openUpload()">
+      <app-icon name="upload" [size]="14" />
+      رفع مستند
+    </button>
+  </div>
+
+  @if (docs.initialLoading()) {
+    <div class="dp-list">
+      @for (i of [0, 1, 2]; track i) {
+        <div class="dp-item"><span class="skeleton" style="height: 2.5rem; width: 100%"></span></div>
+      }
+    </div>
+  } @else if (docs.error()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center">
+      <span>{{ docs.error()?.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="docs.reload()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    <ul class="dp-list">
+      @for (doc of docs.value() ?? []; track doc.id; let i = $index) {
+        <li class="dp-item" [style.--i]="i">
+          <span class="dp-item__icon"><app-icon [name]="CATEGORY[doc.category]?.icon ?? 'file'" [size]="20" /></span>
+          <div class="dp-item__body">
+            <strong>{{ doc.title || doc.fileName || 'مستند' }}</strong>
+            <div class="dp-item__meta">
+              <app-enum-chip [map]="CATEGORY" [value]="doc.category" [small]="true" />
+              @if (doc.expiryDate) {
+                @switch (expiryTone(doc)) {
+                  @case ('danger') {
+                    <app-chip tone="danger" icon="alert" [small]="true">منتهي في {{ doc.expiryDate | cairoDate: 'date' }}</app-chip>
+                  }
+                  @case ('warning') {
+                    <app-chip tone="warning" icon="clock" [small]="true">ينتهي في {{ doc.expiryDate | cairoDate: 'date' }}</app-chip>
+                  }
+                  @default {
+                    <span>صالح حتى {{ doc.expiryDate | cairoDate: 'date' }}</span>
+                  }
+                }
+              }
+              @if (doc.sizeBytes) {
+                <span class="ltr">{{ doc.sizeBytes | bytes }}</span>
+              }
+              <span>{{ doc.uploadedAtUtc ?? doc.createdAtUtc | cairoDate: 'date' }}</span>
+            </div>
+          </div>
+          <div class="dp-item__actions">
+            <button type="button" class="btn btn-sm btn-ghost" (click)="download(doc)" [disabled]="busyId() === doc.id" title="تحميل">
+              @if (busyId() === doc.id) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              } @else {
+                <app-icon name="download" [size]="16" />
+              }
+              <span class="visually-hidden">تحميل</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost dp-delete" *appHasPermission="P.Documents.Manage" (click)="remove(doc)" title="حذف">
+              <app-icon name="trash" [size]="16" />
+              <span class="visually-hidden">حذف</span>
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <app-empty-state icon="archive" title="لا توجد مستندات" text="ارفع الرخص والعقود والصور الخاصة بهذا العنصر." />
+      }
+    </ul>
+  }
+</section>
+
+<app-modal [open]="uploadOpen()" title="رفع مستند" size="md" (closed)="uploadOpen.set(false)">
+  <form [formGroup]="form" (ngSubmit)="upload()" novalidate>
+    <label
+      class="dp-drop"
+      [class.dp-drop--active]="dragging()"
+      [class.dp-drop--has-file]="file()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="dragging.set(false)"
+      (drop)="onDrop($event)"
+    >
+      <input type="file" class="visually-hidden" [accept]="accept" (change)="onFileInput($event)" />
+      <app-icon [name]="file() ? 'check-circle' : 'upload'" [size]="28" />
+      @if (file(); as f) {
+        <strong>{{ f.name }}</strong>
+        <span class="muted ltr">{{ f.size | bytes }}</span>
+      } @else {
+        <strong>اسحب الملف هنا أو اضغط للاختيار</strong>
+        <span class="muted">PDF أو صورة (JPG، PNG، WEBP) — حتى 10 ميجابايت</span>
+      }
+    </label>
+    @if (fileError(); as e) {
+      <div class="invalid-feedback d-block">{{ e }}</div>
+    }
+
+    <div class="form-grid mt-3">
+      <div>
+        <label class="form-label" for="dp-cat">التصنيف *</label>
+        <select id="dp-cat" class="form-select" formControlName="category">
+          @for (o of categoryOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="dp-exp">تاريخ الانتهاء</label>
+        <input id="dp-exp" type="date" class="form-control" formControlName="expiryDate" />
+        <app-form-error [control]="form.controls.expiryDate" label="تاريخ الانتهاء" />
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="dp-title">العنوان</label>
+        <input id="dp-title" class="form-control" formControlName="title" />
+        <app-form-error [control]="form.controls.title" label="العنوان" />
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="dp-notes">ملاحظات</label>
+        <textarea id="dp-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="uploadOpen.set(false)">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="uploading()">
+        @if (uploading()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        رفع
+      </button>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,102 @@
+<aside
+  class="sidebar"
+  [class.collapsed]="isCollapsed()"
+  [class.open]="layout.mobileOpen()"
+  aria-label="القائمة الرئيسية"
+>
+  <!-- Brand -->
+  <div class="sb-brand">
+    <a
+      class="sb-brand__link"
+      [routerLink]="routes.map"
+      (click)="onNavigate()"
+      aria-label="الرئيسية"
+    >
+      <span class="sb-brand__tile">
+        <app-logo class="sb-brand__wordmark" variant="wordmark" [height]="38" />
+        <app-logo class="sb-brand__mark" variant="mark" [height]="22" />
+      </span>
+    </a>
+
+    @if (layout.isMobile()) {
+      <button
+        type="button"
+        class="sb-close"
+        (click)="layout.closeMobile()"
+        aria-label="إغلاق القائمة"
+      >
+        <app-icon name="close" [size]="18" />
+      </button>
+    }
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sb-nav" (scroll)="hideTip()">
+    @if (indicator(); as box) {
+      <span
+        class="sb-indicator"
+        [style.transform]="'translateY(' + box.top + 'px)'"
+        [style.height.px]="box.height"
+        aria-hidden="true"
+      ></span>
+    }
+
+    @for (section of visibleSections(); track section.label; let s = $index) {
+      <div class="sb-sec" [style.--i]="staggerIndex(s, -1)">
+        <span class="sb-sec__label">{{ section.label }}</span>
+        <span class="sb-sec__rule" aria-hidden="true"></span>
+      </div>
+
+      @for (item of section.items; track item.id; let i = $index) {
+        <a
+          #link
+          class="sbi"
+          [routerLink]="item.route"
+          routerLinkActive="on"
+          ariaCurrentWhenActive="page"
+          (isActiveChange)="onActiveChange($event, link)"
+          (click)="onNavigate()"
+          (mouseenter)="showTip(item.label, link)"
+          (mouseleave)="hideTip()"
+          (focus)="showTip(item.label, link)"
+          (blur)="hideTip()"
+          [attr.aria-label]="isCollapsed() ? item.label : null"
+          [style.--i]="staggerIndex(s, i)"
+        >
+          <span class="sbi__icon"><app-icon [name]="iconName(item)" [size]="20" /></span>
+          <span class="sbi__label">{{ item.label }}</span>
+        </a>
+      }
+    }
+  </nav>
+
+  <!-- Profile -->
+  @if (user(); as u) {
+    <a
+      #profile
+      class="sb-user"
+      [routerLink]="routes.account"
+      (click)="onNavigate()"
+      (mouseenter)="showTip(u.name, profile)"
+      (mouseleave)="hideTip()"
+    >
+      <span class="sb-user__avatar">
+        {{ u.avatar }}
+        <span class="sb-user__status" aria-hidden="true"></span>
+      </span>
+      <span class="sb-user__meta">
+        <strong>{{ u.name }}</strong>
+        <small>{{ roleLabel() }}</small>
+      </span>
+    </a>
+  }
+
+  <div class="sb-version">الإصدار {{ appVersion }}</div>
+</aside>
+
+<!-- Collapsed-rail tooltip: fixed-positioned so the scrolling nav can't clip it. -->
+@if (tip(); as t) {
+  <div class="sb-tip" role="tooltip" [style.top.px]="t.top" [style.right.px]="t.right">
+    {{ t.label }}
+  </div>
+}

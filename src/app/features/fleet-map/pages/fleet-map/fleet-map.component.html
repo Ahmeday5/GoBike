@@ -1,0 +1,204 @@
+<div class="fm">
+  <header class="fm__top">
+    <div class="fm__heading">
+      <h1 class="fm__title">الخريطة المباشرة</h1>
+      @switch (hub.status()) {
+        @case ('connected') {
+          <span class="fm__live" title="التحديثات المباشرة تعمل">
+            <span class="fm__live-dot" aria-hidden="true"></span>
+            مباشر
+            @if (lastLiveAt(); as at) {
+              <span class="muted">· آخر تحديث {{ at | cairoDate: 'time' }}</span>
+            }
+          </span>
+        }
+        @case ('disconnected') {
+          <span class="fm__live fm__live--off">
+            <app-icon name="wifi-off" [size]="13" />
+            التحديث المباشر متوقف
+          </span>
+        }
+        @default {
+          <span class="fm__live fm__live--wait">
+            <app-icon name="refresh" [size]="13" class="fm__spin" />
+            جارٍ الاتصال…
+          </span>
+        }
+      }
+    </div>
+
+    <div class="fm__filters" role="search">
+      <select
+        class="form-select form-select-sm"
+        aria-label="الحالة"
+        [value]="f().status"
+        (change)="selectStatus($event)"
+      >
+        <option value="">كل الحالات</option>
+        @for (o of statusOptions; track o.value) {
+          <option [value]="o.value">{{ o.label }}</option>
+        }
+      </select>
+
+      @if (canPickOffice()) {
+        <select
+          class="form-select form-select-sm"
+          aria-label="المكتب"
+          [value]="f().officeId"
+          (change)="selectOffice($event)"
+        >
+          <option value="">كل المكاتب</option>
+          @for (o of offices(); track o.id) {
+            <option [value]="o.id">{{ o.name }}</option>
+          }
+        </select>
+      }
+
+      @if (hasFilters()) {
+        <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+          <app-icon name="close" [size]="14" />
+          مسح
+        </button>
+      }
+      <button
+        type="button"
+        class="btn btn-sm"
+        [disabled]="fleet.loading()"
+        (click)="fleet.reload()"
+        aria-label="تحديث"
+      >
+        <app-icon name="refresh" [size]="14" [class.fm__spin]="fleet.loading()" />
+        تحديث
+      </button>
+    </div>
+  </header>
+
+  <div class="stats fm__stats">
+    <button
+      type="button"
+      class="stat stat--button"
+      [class.stat--active]="!f().health && !f().view"
+      style="--i: 0"
+      (click)="toggleCounter('total')"
+    >
+      <span class="stat__icon"><app-icon name="bike" [size]="20" /></span>
+      <span>
+        <span class="stat__value">{{ counts().total }}</span>
+        <span class="stat__label">إجمالي الموتوسيكلات</span>
+      </span>
+    </button>
+    <button
+      type="button"
+      class="stat stat--button stat--success"
+      [class.stat--active]="f().health === 'Green'"
+      [attr.aria-pressed]="f().health === 'Green'"
+      style="--i: 1"
+      (click)="toggleCounter('Green')"
+    >
+      <span class="stat__icon"><app-icon name="check-circle" [size]="20" /></span>
+      <span>
+        <span class="stat__value">{{ counts().green }}</span>
+        <span class="stat__label">سليمة</span>
+      </span>
+    </button>
+    <button
+      type="button"
+      class="stat stat--button stat--danger"
+      [class.stat--active]="f().health === 'Red'"
+      [attr.aria-pressed]="f().health === 'Red'"
+      style="--i: 2"
+      (click)="toggleCounter('Red')"
+    >
+      <span class="stat__icon"><app-icon name="alert" [size]="20" /></span>
+      <span>
+        <span class="stat__value">{{ counts().red }}</span>
+        <span class="stat__label">بها مشكلة</span>
+      </span>
+    </button>
+    <button
+      type="button"
+      class="stat stat--button stat--neutral"
+      [class.stat--active]="f().view === 'offline'"
+      [attr.aria-pressed]="f().view === 'offline'"
+      style="--i: 3"
+      (click)="toggleCounter('offline')"
+    >
+      <span class="stat__icon"><app-icon name="wifi-off" [size]="20" /></span>
+      <span>
+        <span class="stat__value">{{ counts().offline }}</span>
+        <span class="stat__label">بدون إشارة حديثة</span>
+      </span>
+    </button>
+  </div>
+
+  @if (fleet.error(); as err) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ err.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="fleet.reload()">إعادة المحاولة</button>
+    </div>
+  }
+
+  <div class="fm__body">
+    <section class="fm__map" aria-label="خريطة الأسطول">
+      <app-map-view class="fm__view" (ready)="onMap($event)" />
+
+      <div class="fm__tools">
+        <button type="button" class="fm__tool" (click)="fitAll()" title="عرض كل الموتوسيكلات">
+          <app-icon name="target" [size]="16" />
+          <span>عرض الكل</span>
+        </button>
+        <button
+          type="button"
+          class="fm__tool fm__tool--drawer"
+          [attr.aria-expanded]="drawerOpen()"
+          (click)="drawerOpen.set(!drawerOpen())"
+        >
+          <app-icon name="menu" [size]="16" />
+          <span>القائمة</span>
+          @if (unplaced().length) {
+            <span class="fm__tool-badge">{{ unplaced().length }}</span>
+          }
+        </button>
+      </div>
+
+      @if (fleet.initialLoading()) {
+        <div class="fm__notice" role="status">
+          <app-icon name="refresh" [size]="16" class="fm__spin" />
+          جارٍ تحميل مواقع الأسطول…
+        </div>
+      } @else if (fleet.value() && !placed().length) {
+        <div class="fm__notice" role="status">
+          <app-icon name="map-pin" [size]="16" />
+          {{
+            hasFilters()
+              ? 'لا توجد موتوسيكلات على الخريطة بهذه الفلاتر'
+              : 'لا توجد موتوسيكلات لها موقع حاليًا'
+          }}
+        </div>
+      }
+
+      <ul class="fm__legend" aria-label="دليل الألوان">
+        <li><span class="lg lg--green"><app-icon name="check" [size]="10" /></span>سليمة</li>
+        <li><span class="lg lg--red"><app-icon name="alert" [size]="10" /></span>بها مشكلة</li>
+        <li>
+          <span class="lg lg--stale"><app-icon name="wifi-off" [size]="10" /></span>إشارة قديمة
+        </li>
+        <li><span class="lg lg--alert">!</span>تنبيه / خارج النطاق</li>
+      </ul>
+    </section>
+
+    @if (drawerOpen()) {
+      <div class="fm__scrim" aria-hidden="true" (click)="drawerOpen.set(false)"></div>
+    }
+    <aside class="fm__side" [class.fm__side--open]="drawerOpen()" aria-label="قائمة الموتوسيكلات">
+      <app-fleet-list
+        [placed]="placed()"
+        [unplaced]="unplaced()"
+        [loading]="fleet.initialLoading()"
+        (locate)="locate($event)"
+        (open)="open($event)"
+        (closed)="drawerOpen.set(false)"
+      />
+    </aside>
+  </div>
+</div>

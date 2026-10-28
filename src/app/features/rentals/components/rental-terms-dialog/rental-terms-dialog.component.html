@@ -1,0 +1,61 @@
+<app-modal [open]="open()" title="تعديل شروط الإيجار" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <div>
+        <label class="form-label" for="rt-amount">قيمة الإيجار (ج.م) *</label>
+        <input
+          id="rt-amount"
+          type="number"
+          class="form-control"
+          formControlName="rentAmount"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.rentAmount" label="قيمة الإيجار" />
+      </div>
+      <div>
+        <label class="form-label" for="rt-period">فترة الإيجار *</label>
+        <select id="rt-period" class="form-select" formControlName="rentPeriod">
+          @for (o of periodOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="rt-deposit">مبلغ التأمين (ج.م) *</label>
+        <input
+          id="rt-deposit"
+          type="number"
+          class="form-control"
+          formControlName="depositAmount"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.depositAmount" label="مبلغ التأمين" />
+      </div>
+      <div>
+        <label class="form-label" for="rt-contract">رقم العقد</label>
+        <input id="rt-contract" class="form-control" formControlName="contractNumber" dir="ltr" />
+        <app-form-error [control]="form.controls.contractNumber" label="رقم العقد" />
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="rt-terms">شروط الإيجار</label>
+        <textarea id="rt-terms" class="form-control" rows="3" formControlName="terms"></textarea>
+      </div>
+      <div class="span-2">
+        <label class="form-label" for="rt-notes">ملاحظات</label>
+        <textarea id="rt-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        حفظ التعديلات
+      </button>
+    </div>
+  </form>
+</app-modal>

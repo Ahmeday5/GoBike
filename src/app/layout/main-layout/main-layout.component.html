@@ -1,0 +1,21 @@
+<div class="app-layout">
+  <div class="sidebar-wrapper">
+    <app-sidebar />
+  </div>
+
+  @if (layout.mobileOpen()) {
+    <!-- Pointer-only backdrop; keyboard users close the drawer with Escape (host listener). -->
+    <div class="sidebar-overlay" aria-hidden="true" (click)="layout.closeMobile()"></div>
+  }
+
+  <div class="main-content">
+    <app-topbar />
+    <main id="main" class="content-body">
+      <div class="container-fluid py-4">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+</div>
+
+<app-confirm-dialog />

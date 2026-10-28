@@ -1,0 +1,12 @@
+/* ══════════════════════════════════════════════════════════════
+   GoBiky Dashboard — global styles entry point.
+   Order matters: tokens → motion → base → components → patterns.
+   Component-specific styles live next to each component.
+   ══════════════════════════════════════════════════════════════ */
+
+@use 'styles/tokens';
+@use 'styles/animations';
+@use 'styles/base';
+@use 'styles/components';
+@use 'styles/patterns';
+@use 'styles/map';

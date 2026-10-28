@@ -1,0 +1,65 @@
+<button
+  type="button"
+  class="nb-trigger"
+  [class.nb-trigger--ringing]="ringing()"
+  [class.nb-trigger--open]="open()"
+  (click)="toggle()"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="badge() ? 'الإشعارات، ' + badge() + ' غير مقروء' : 'الإشعارات'"
+>
+  <app-icon class="nb-bell" name="bell" [size]="19" />
+  @if (badge()) {
+    <span class="nb-badge">{{ badge() }}</span>
+  }
+</button>
+
+@if (open()) {
+  <div class="nb-panel" role="menu">
+    <div class="nb-head">
+      <strong>الإشعارات</strong>
+      @if (center.unreadCount()) {
+        <button type="button" class="link-btn nb-head__action" (click)="markAll()">
+          تعليم الكل كمقروء
+        </button>
+      }
+    </div>
+
+    <div class="nb-list">
+      @for (n of center.recent(); track n.id; let i = $index) {
+        <button
+          type="button"
+          role="menuitem"
+          class="nb-item"
+          [class.nb-item--unread]="!n.isRead"
+          [style.--i]="i"
+          (click)="select(n)"
+        >
+          <span class="nb-item__icon" [class]="'nb-item__icon nb-item__icon--' + severity(n).tone">
+            <app-icon [name]="severity(n).icon ?? 'bell'" [size]="16" />
+          </span>
+          <span class="nb-item__body">
+            <strong>{{ n.title }}</strong>
+            @if (n.body) {
+              <small>{{ n.body }}</small>
+            }
+            <time>{{ n.createdAtUtc | cairoDate: 'relative' }}</time>
+          </span>
+          @if (!n.isRead) {
+            <span class="nb-item__dot" aria-label="غير مقروء"></span>
+          }
+        </button>
+      } @empty {
+        <div class="nb-empty">
+          <app-icon name="bell" [size]="22" />
+          <span>لا توجد إشعارات بعد</span>
+        </div>
+      }
+    </div>
+
+    <a class="nb-all" [routerLink]="allLink" (click)="open.set(false)">
+      عرض كل الإشعارات
+      <app-icon name="arrow-left" [size]="14" />
+    </a>
+  </div>
+}

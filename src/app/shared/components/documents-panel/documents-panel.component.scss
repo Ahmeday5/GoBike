@@ -1,0 +1,117 @@
+:host {
+  display: block;
+}
+
+.dp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dp-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--brd);
+  border-radius: var(--r);
+  background: var(--bg2);
+  animation: fade-up var(--dur-3) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+  transition:
+    border-color var(--dur-2),
+    box-shadow var(--dur-2),
+    transform var(--dur-3) var(--ease-out);
+
+  &:hover {
+    border-color: var(--brd2);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+}
+
+.dp-item__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.dp-item__body {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: var(--fs-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.dp-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  margin-top: 0.25rem;
+  font-size: var(--fs-xs);
+  color: var(--txt3);
+}
+
+.dp-item__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.dp-delete:hover {
+  color: var(--re);
+  background: var(--re-l);
+}
+
+/* ── Drop zone ── */
+.dp-drop {
+  display: grid;
+  justify-items: center;
+  gap: 0.375rem;
+  padding: 1.75rem 1rem;
+  border: 2px dashed var(--brd2);
+  border-radius: var(--rl);
+  background: var(--bg3);
+  color: var(--txt2);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-2),
+    background var(--dur-2),
+    transform var(--dur-3) var(--ease-spring);
+
+  app-icon {
+    color: var(--primary);
+  }
+
+  &:hover,
+  &--active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  &--active {
+    transform: scale(1.02);
+  }
+  &--has-file {
+    border-style: solid;
+    border-color: var(--gr);
+    background: var(--gr-l);
+
+    app-icon {
+      color: var(--gr);
+    }
+  }
+}
