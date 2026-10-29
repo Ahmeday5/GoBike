@@ -53,60 +53,72 @@
         </div>
       </div>
     } @else if (loadFailed()) {
-      <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <div
+        class="alert alert-danger d-flex justify-content-between align-items-center"
+        role="alert"
+      >
         <span>{{ driverRes.error()?.message }}</span>
-        <button type="button" class="btn btn-sm" (click)="driverRes.reload()">إعادة المحاولة</button>
+        <button type="button" class="btn btn-sm" (click)="driverRes.reload()">
+          إعادة المحاولة
+        </button>
       </div>
-    } @else if (driver(); as d) {
-      <section class="panel dd-hero" [class.dd-hero--off]="d.status !== 'Active'">
-        <span class="dd-hero__avatar" aria-hidden="true">{{ d.fullName.charAt(0) }}</span>
-        <div class="dd-hero__body">
-          <div class="dd-hero__chips">
-            <app-enum-chip [map]="STATUS" [value]="d.status" />
-            @if (d.hasAppAccess) {
-              <app-chip tone="success" icon="key">لديه دخول للتطبيق</app-chip>
-            } @else {
-              <app-chip tone="neutral" icon="lock">بدون حساب تطبيق</app-chip>
+    } @else {
+      @if (driver(); as d) {
+        <section class="panel dd-hero" [class.dd-hero--off]="d.status !== 'Active'">
+          <span class="dd-hero__avatar" aria-hidden="true">{{ d.fullName.charAt(0) }}</span>
+          <div class="dd-hero__body">
+            <div class="dd-hero__chips">
+              <app-enum-chip [map]="STATUS" [value]="d.status" />
+              @if (d.hasAppAccess) {
+                <app-chip tone="success" icon="key">لديه دخول للتطبيق</app-chip>
+              } @else {
+                <app-chip tone="neutral" icon="lock">بدون حساب تطبيق</app-chip>
+              }
+              @if (d.hasPushDevice) {
+                <app-chip tone="info" icon="bell">الإشعارات مفعّلة</app-chip>
+              } @else {
+                <span title="لم يسجّل الدخول إلى التطبيق بعد، فلن تصله الإشعارات">
+                  <app-chip tone="neutral" icon="minus-circle">الإشعارات متوقفة</app-chip>
+                </span>
+              }
+              @if (d.hasActiveAssignment) {
+                <app-chip tone="info" icon="bike">معه موتوسيكل الآن</app-chip>
+              }
+            </div>
+            @if (d.statusReason) {
+              <p class="dd-hero__reason">
+                <app-icon name="info" [size]="14" />
+                <span>سبب الحالة: {{ d.statusReason }}</span>
+              </p>
             }
-            @if (d.hasPushDevice) {
-              <app-chip tone="info" icon="bell">الإشعارات مفعّلة</app-chip>
-            } @else {
-              <span title="لم يسجّل الدخول إلى التطبيق بعد، فلن تصله الإشعارات">
-                <app-chip tone="neutral" icon="minus-circle">الإشعارات متوقفة</app-chip>
-              </span>
-            }
-            @if (d.hasActiveAssignment) {
-              <app-chip tone="info" icon="bike">معه موتوسيكل الآن</app-chip>
-            }
+            <ul class="dd-hero__meta">
+              <li>
+                <app-icon name="phone" [size]="14" /><span class="ltr">{{ d.phoneNumber }}</span>
+              </li>
+              <li><app-icon name="building" [size]="14" />{{ d.officeName ?? '—' }}</li>
+              <li>
+                <app-icon name="logout" [size]="14" />
+                آخر دخول:
+                {{ d.lastLoginAtUtc ? (d.lastLoginAtUtc | cairoDate: 'relative') : 'لم يدخل بعد' }}
+              </li>
+              <li>
+                <app-icon name="clock" [size]="14" />
+                آخر ظهور في التطبيق:
+                {{ d.lastAppSeenAtUtc ? (d.lastAppSeenAtUtc | cairoDate: 'relative') : '—' }}
+              </li>
+            </ul>
           </div>
-          @if (d.statusReason) {
-            <p class="dd-hero__reason">
-              <app-icon name="info" [size]="14" />
-              <span>سبب الحالة: {{ d.statusReason }}</span>
-            </p>
-          }
-          <ul class="dd-hero__meta">
-            <li>
-              <app-icon name="phone" [size]="14" /><span class="ltr">{{ d.phoneNumber }}</span>
-            </li>
-            <li><app-icon name="building" [size]="14" />{{ d.officeName ?? '—' }}</li>
-            <li>
-              <app-icon name="logout" [size]="14" />
-              آخر دخول:
-              {{ d.lastLoginAtUtc ? (d.lastLoginAtUtc | cairoDate: 'relative') : 'لم يدخل بعد' }}
-            </li>
-            <li>
-              <app-icon name="clock" [size]="14" />
-              آخر ظهور في التطبيق:
-              {{ d.lastAppSeenAtUtc ? (d.lastAppSeenAtUtc | cairoDate: 'relative') : '—' }}
-            </li>
-          </ul>
-        </div>
-      </section>
+        </section>
+      }
     }
   }
 
-  <app-tabs class="no-print" [tabs]="tabs()" [active]="activeTab()" (activeChange)="setTab($event)" />
+  <app-tabs
+    class="no-print"
+    [tabs]="tabs()"
+    [active]="activeTab()"
+    (activeChange)="setTab($event)"
+  />
 
   <div class="dd-tab">
     @switch (activeTab()) {

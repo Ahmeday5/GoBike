@@ -1,0 +1,171 @@
+@if (notFound()) {
+  <app-page-header title="تفاصيل الحادثة" [backLink]="backLink" />
+  <div class="panel">
+    <app-empty-state
+      icon="alert"
+      title="الحادثة غير موجودة"
+      text="ربما تتبع مكتبًا آخر أو أن الرابط غير صحيح."
+    />
+  </div>
+} @else {
+  <app-page-header
+    [title]="title()"
+    [subtitle]="incident()?.plateNumber ? 'الموتوسيكل ' + incident()!.plateNumber : ''"
+    [backLink]="backLink"
+  >
+    @if (incident(); as i) {
+      <div class="id-actions" *appHasPermission="P.Incidents.Manage">
+        @if (i.status === 'Open') {
+          <button type="button" class="btn" [disabled]="busy()" (click)="acknowledge()">
+            @if (busy()) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            } @else {
+              <app-icon name="eye" [size]="16" />
+            }
+            تم الاطلاع
+          </button>
+        }
+        @if (i.status !== 'Resolved') {
+          <button type="button" class="btn btn-brand" (click)="resolving.set(true)">
+            <app-icon name="check-circle" [size]="16" />
+            حل الحادثة
+          </button>
+        }
+      </div>
+    }
+  </app-page-header>
+
+  @if (res.initialLoading()) {
+    <div class="id-grid" aria-busy="true">
+      <div class="panel">
+        <span class="skeleton" style="display: block; width: 14rem; height: 1.25rem"></span>
+        <span
+          class="skeleton"
+          style="display: block; width: 100%; height: 6rem; margin-top: 1rem"
+        ></span>
+      </div>
+      <div class="panel"><span class="skeleton" style="display: block; height: 16rem"></span></div>
+    </div>
+  } @else if (res.error() && !incident()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ res.error()?.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="res.reload()">إعادة المحاولة</button>
+    </div>
+  } @else if (incident()) {
+    @let i = incident()!;
+    <div class="id-grid">
+      <div class="id-col">
+        <section class="panel" style="--i: 0">
+          <div class="id-chips">
+            <app-enum-chip [map]="TYPE" [value]="i.type" />
+            <app-enum-chip [map]="STATUS" [value]="i.status" />
+            @if (autoResolves()) {
+              <app-chip tone="neutral" icon="refresh">يُغلق تلقائيًا</app-chip>
+            }
+          </div>
+          @if (i.type === 'SuspectedPowerDisconnect') {
+            <p class="id-hint">
+              <app-icon name="info" [size]="16" />
+              <span>{{ SUSPECTED_HINT }}</span>
+            </p>
+          }
+          @if (i.message || i.description || i.title) {
+            <p class="id-message">{{ i.message || i.description || i.title }}</p>
+          }
+          <dl class="kv">
+            <div>
+              <dt>الموتوسيكل</dt>
+              <dd>
+                @if (i.motorcycleId) {
+                  <a class="ltr" [routerLink]="motorcycleLink(i.motorcycleId)">{{
+                    i.plateNumber ?? 'عرض'
+                  }}</a>
+                } @else {
+                  <span class="ltr">{{ i.plateNumber ?? '—' }}</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>السائق</dt>
+              <dd>
+                @if (i.driverId) {
+                  <a [routerLink]="driverLink(i.driverId)">{{ i.driverName ?? 'عرض' }}</a>
+                } @else {
+                  {{ i.driverName ?? '—' }}
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>المكتب</dt>
+              <dd>{{ i.officeName ?? '—' }}</dd>
+            </div>
+            <div>
+              <dt>جهاز التتبع</dt>
+              <dd class="ltr">{{ i.imei ?? '—' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="panel" style="--i: 1">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="clock" [size]="18" />التسلسل الزمني</h2>
+          </header>
+          <ol class="id-timeline">
+            @for (s of timeline(); track s.title) {
+              <li [class]="'id-timeline__step id-timeline__step--' + s.tone">
+                <span class="id-timeline__dot"><app-icon [name]="s.icon" [size]="14" /></span>
+                <div class="id-timeline__body">
+                  <strong>{{ s.title }}</strong>
+                  <span class="muted">
+                    {{ s.at ? (s.at | cairoDate) : '—' }}
+                    @if (s.by) {
+                      · {{ s.by }}
+                    }
+                  </span>
+                  @if (s.note) {
+                    <p class="id-timeline__note">{{ s.note }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+          @if (i.status !== 'Resolved' && !i.acknowledgedAtUtc) {
+            <p class="muted id-pending">لم يطّلع عليها أحد بعد.</p>
+          }
+        </section>
+      </div>
+
+      <section class="panel id-map-panel" style="--i: 2">
+        <header class="panel__head">
+          <h2 class="panel__title"><app-icon name="map-pin" [size]="18" />آخر موقع معروف</h2>
+          @if (position(); as pos) {
+            <span class="muted ltr id-coords"
+              >{{ pos[0].toFixed(5) }}, {{ pos[1].toFixed(5) }}</span
+            >
+          }
+        </header>
+        @if (position(); as pos) {
+          <app-map-view
+            class="id-map"
+            [center]="pos"
+            [zoom]="15"
+            [scrollZoom]="false"
+            (ready)="onMap($event)"
+          />
+        } @else {
+          <app-empty-state
+            icon="map-pin"
+            title="لا يوجد موقع معروف"
+            text="لم يرسل جهاز التتبع موقعًا مع هذه الحادثة."
+          />
+        }
+      </section>
+    </div>
+  }
+}
+
+<app-resolve-incident-dialog
+  [incident]="resolving() ? incident() : null"
+  (closed)="resolving.set(false)"
+  (resolved)="onResolved()"
+/>

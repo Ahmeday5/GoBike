@@ -31,6 +31,9 @@ export class OfficesApi {
   }
 
   stats(id: string): Observable<OfficeStatsDto> {
-    return this.api.get<OfficeStatsDto>(`offices/${id}/stats`, { context: withSkipLoader() });
+    // The details dialog renders its own error + retry.
+    return this.api.get<OfficeStatsDto>(`offices/${id}/stats`, {
+      context: withSilentErrors(withSkipLoader()),
+    });
   }
 }

@@ -22,7 +22,7 @@
     <ul class="dp-list">
       @for (doc of docs.value() ?? []; track doc.id; let i = $index) {
         <li class="dp-item" [style.--i]="i">
-          <span class="dp-item__icon"><app-icon [name]="CATEGORY[doc.category]?.icon ?? 'file'" [size]="20" /></span>
+          <span class="dp-item__icon"><app-icon [name]="categoryIcon(doc.category)" [size]="20" /></span>
           <div class="dp-item__body">
             <strong>{{ doc.title || doc.fileName || 'مستند' }}</strong>
             <div class="dp-item__meta">

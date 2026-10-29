@@ -1,0 +1,212 @@
+@let r = range();
+<div class="filters" role="search">
+  <label class="mi-field">
+    <span class="mi-label">من</span>
+    <input
+      type="date"
+      class="form-control ltr"
+      [value]="r.from"
+      [max]="r.to"
+      (change)="setDate('mFrom', $event)"
+    />
+  </label>
+  <label class="mi-field">
+    <span class="mi-label">إلى</span>
+    <input
+      type="date"
+      class="form-control ltr"
+      [value]="r.to"
+      [min]="r.from"
+      (change)="setDate('mTo', $event)"
+    />
+  </label>
+  <div class="mi-presets" role="group" aria-label="فترات سريعة">
+    <button type="button" class="btn btn-sm btn-ghost" (click)="preset(7)">7 أيام</button>
+    <button type="button" class="btn btn-sm btn-ghost" (click)="preset(30)">30 يومًا</button>
+    <button type="button" class="btn btn-sm btn-ghost" (click)="preset(90)">90 يومًا</button>
+  </div>
+</div>
+
+@if (r.error) {
+  <div class="alert alert-warning" role="alert">{{ r.error }}</div>
+}
+@if (mileage.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="mileage.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<div class="stats">
+  @if (mileage.initialLoading()) {
+    @for (i of [0, 1, 2]; track i) {
+      <div class="stat"><span class="skeleton" style="width: 100%; height: 2.5rem"></span></div>
+    }
+  } @else if (summary()) {
+    @let s = summary()!;
+    <div class="stat" style="--i: 0">
+      <span class="stat__icon"><app-icon name="route" [size]="18" /></span>
+      <span>
+        <span class="stat__value">{{ s.total | km: true }}</span>
+        <span class="stat__label">الإجمالي خلال {{ r.days }} يوم</span>
+      </span>
+    </div>
+    <div class="stat" style="--i: 1">
+      <span class="stat__icon"><app-icon name="chart" [size]="18" /></span>
+      <span>
+        <span class="stat__value">{{ s.avg | km: true }}</span>
+        <span class="stat__label">متوسط يومي</span>
+      </span>
+    </div>
+    <div class="stat stat--neutral" style="--i: 2">
+      <span class="stat__icon"><app-icon name="calendar" [size]="18" /></span>
+      <span>
+        <span class="stat__value">{{ s.active }} / {{ r.days }}</span>
+        <span class="stat__label">أيام بها حركة</span>
+      </span>
+    </div>
+  }
+</div>
+
+<section class="panel" [class.mi-busy]="mileage.loading() && !mileage.initialLoading()">
+  <header class="panel__head">
+    <h2 class="panel__title"><app-icon name="chart" [size]="18" />الكيلومترات اليومية</h2>
+    @if (days().length) {
+      <button type="button" class="btn btn-sm btn-ghost" (click)="showTable.set(!showTable())">
+        <app-icon [name]="showTable() ? 'chart' : 'grid'" [size]="14" />
+        {{ showTable() ? 'عرض كرسم' : 'عرض كجدول' }}
+      </button>
+    }
+  </header>
+
+  <!-- Always rendered: the ResizeObserver measures it. -->
+  <div #chartHost class="mi-host" dir="ltr" [hidden]="showTable()">
+    @if (mileage.initialLoading()) {
+      <span class="skeleton d-block" [style.height.px]="height"></span>
+    } @else if (chart()) {
+      @let c = chart()!;
+      @if (summary()!.total === 0) {
+        <div dir="rtl">
+          <app-empty-state icon="route" title="لم يتحرك الموتوسيكل في هذه الفترة" />
+        </div>
+      } @else {
+        <svg
+          class="mi-svg"
+          [attr.width]="width()"
+          [attr.height]="height"
+          [attr.viewBox]="'0 0 ' + width() + ' ' + height"
+          role="img"
+          [attr.aria-label]="'الكيلومترات اليومية — الإجمالي ' + kmText(summary()!.total)"
+          (mouseleave)="hover.set(null)"
+        >
+          @for (t of c.ticks; track t.y) {
+            <line
+              class="mi-grid"
+              [attr.x1]="pad.left"
+              [attr.x2]="width() - pad.right"
+              [attr.y1]="t.y"
+              [attr.y2]="t.y"
+            />
+            <text
+              class="mi-axis"
+              [attr.x]="pad.left - 8"
+              [attr.y]="t.y"
+              text-anchor="end"
+              dy="0.32em"
+            >
+              {{ t.label }}
+            </text>
+          }
+          @for (b of c.bars; track b.date; let i = $index) {
+            <path
+              class="mi-bar"
+              [class.mi-bar--dim]="hover() !== null && hover() !== i"
+              [attr.d]="b.path"
+            />
+            @if (b.label) {
+              <text
+                class="mi-axis"
+                [attr.x]="b.x + b.w / 2"
+                [attr.y]="c.baseline + 18"
+                text-anchor="middle"
+              >
+                {{ b.label }}
+              </text>
+            }
+          }
+          @if (c.avgY !== null) {
+            <line
+              class="mi-avg"
+              [attr.x1]="pad.left"
+              [attr.x2]="width() - pad.right"
+              [attr.y1]="c.avgY"
+              [attr.y2]="c.avgY"
+            />
+            <text
+              class="mi-axis mi-axis--avg"
+              [attr.x]="width() - pad.right"
+              [attr.y]="c.avgY - 5"
+              text-anchor="end"
+            >
+              المتوسط
+            </text>
+          }
+          <line
+            class="mi-baseline"
+            [attr.x1]="pad.left"
+            [attr.x2]="width() - pad.right"
+            [attr.y1]="c.baseline"
+            [attr.y2]="c.baseline"
+          />
+          <!-- Full-height hit targets, wider than the bars. -->
+          @for (b of c.bars; track b.date; let i = $index) {
+            <rect
+              class="mi-hit"
+              [attr.x]="pad.left + i * c.slot"
+              [attr.y]="pad.top"
+              [attr.width]="c.slot"
+              [attr.height]="c.baseline - pad.top"
+              (mouseenter)="hover.set(i)"
+              (touchstart)="hover.set(i)"
+            />
+          }
+        </svg>
+        @if (hovered(); as h) {
+          <div
+            class="mi-tip"
+            dir="rtl"
+            [style.left.px]="h.x + h.w / 2"
+            [style.top.px]="h.y"
+            role="status"
+          >
+            <span class="mi-tip__date">{{ longDate(h.date) }}</span>
+            <strong>{{ h.km | km: true }}</strong>
+          </div>
+        }
+      }
+    } @else if (!r.error && !mileage.loading()) {
+      <div dir="rtl"><app-empty-state icon="chart" title="لا توجد بيانات" /></div>
+    }
+  </div>
+
+  @if (showTable()) {
+    <div class="table-responsive mi-table">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th scope="col">اليوم</th>
+            <th scope="col" class="text-end">المسافة</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of days(); track d.date) {
+            <tr>
+              <td>{{ longDate(d.date) }}</td>
+              <td class="text-end">{{ d.km | km: true }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

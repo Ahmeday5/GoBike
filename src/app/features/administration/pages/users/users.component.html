@@ -1,0 +1,250 @@
+<app-page-header title="المستخدمون" subtitle="حسابات موظفي لوحة التحكم وأدوارهم">
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Users.Manage"
+    (click)="openCreate()"
+  >
+    <app-icon name="plus" [size]="16" />
+    إضافة مستخدم
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث بالاسم أو البريد أو الهاتف…"
+  />
+
+  <select
+    class="form-select"
+    aria-label="الدور"
+    [value]="f().role"
+    (change)="select('role', $event)"
+  >
+    <option value="">كل الأدوار</option>
+    @for (r of roleOptions(); track r.value) {
+      <option [value]="r.value">{{ r.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().isActive"
+    (change)="select('isActive', $event)"
+  >
+    <option value="">كل الحالات</option>
+    <option value="true">نشط</option>
+    <option value="false">موقوف</option>
+  </select>
+
+  <span class="filters__spacer"></span>
+
+  <div class="us-sort">
+    <select
+      class="form-select"
+      aria-label="الترتيب"
+      [value]="f().sortBy"
+      (change)="select('sortBy', $event)"
+    >
+      @for (o of sortOptions; track o.value) {
+        <option [value]="o.value">{{ o.label }}</option>
+      }
+    </select>
+    <button
+      type="button"
+      class="btn us-sort__dir"
+      [disabled]="!f().sortBy"
+      (click)="toggleSortDir()"
+      [attr.aria-label]="f().sortDesc ? 'ترتيب تنازلي' : 'ترتيب تصاعدي'"
+      [title]="f().sortDesc ? 'تنازلي' : 'تصاعدي'"
+    >
+      <app-icon name="chevron-down" [size]="16" [class.us-sort__flip]="!f().sortDesc" />
+    </button>
+  </div>
+
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (users.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="users.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="users.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  emptyIcon="users"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا يوجد مستخدمون بعد'"
+  [emptyText]="hasFilters() ? 'جرّب تغيير كلمات البحث أو الفلاتر' : ''"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="users.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-user-form-dialog
+  [open]="formOpen()"
+  [user]="editing()"
+  (closed)="closeForm()"
+  (created)="onCreated($event)"
+  (saved)="onSaved()"
+/>
+<app-user-roles-dialog
+  [open]="!!rolesFor()"
+  [user]="rolesFor()"
+  (closed)="rolesFor.set(null)"
+  (saved)="onRolesSaved()"
+/>
+<app-user-password-dialog
+  [open]="!!passwordFor()"
+  [user]="passwordFor()"
+  (closed)="passwordFor.set(null)"
+  (done)="onPasswordReset($event)"
+/>
+<app-user-credentials-dialog
+  [open]="!!credentials()"
+  [credentials]="credentials()"
+  (closed)="credentials.set(null)"
+/>
+
+<ng-template #userTpl let-u>
+  <div class="us-user" [class.us-user--off]="!u.isActive">
+    <span class="us-user__avatar" aria-hidden="true">{{ u.fullName?.charAt(0) }}</span>
+    <div class="us-user__text">
+      <strong>
+        {{ u.fullName }}
+        @if (u.id === meId()) {
+          <app-chip tone="info" [small]="true">أنت</app-chip>
+        }
+      </strong>
+      <span class="muted ltr us-user__email">{{ u.email }}</span>
+    </div>
+  </div>
+</ng-template>
+<ng-template #phoneTpl let-u>
+  @if (u.phoneNumber) {
+    <span class="ltr">{{ u.phoneNumber }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #officeTpl let-u>
+  @if (u.officeId) {
+    {{ u.officeName || '—' }}
+  } @else {
+    <app-chip tone="purple" icon="building" [small]="true">كل المكاتب</app-chip>
+  }
+</ng-template>
+<ng-template #rolesTpl let-u>
+  <div class="us-roles">
+    @for (r of u.roles; track r) {
+      <app-enum-chip [map]="ROLE" [value]="r" [small]="true" />
+    } @empty {
+      <span class="muted">بدون دور</span>
+    }
+  </div>
+</ng-template>
+<ng-template #activeTpl let-u>
+  @if (u.isActive) {
+    <app-chip tone="success" icon="check-circle" [small]="true">نشط</app-chip>
+  } @else {
+    <app-chip tone="neutral" icon="pause" [small]="true">موقوف</app-chip>
+  }
+</ng-template>
+<ng-template #loginTpl let-u>
+  @if (u.lastLoginAtUtc) {
+    <span [title]="u.lastLoginAtUtc | cairoDate">{{
+      u.lastLoginAtUtc | cairoDate: 'relative'
+    }}</span>
+  } @else {
+    <span class="muted">لم يسجّل الدخول</span>
+  }
+</ng-template>
+<ng-template #actionsTpl let-u>
+  <div class="ra">
+    <button
+      type="button"
+      class="ra__btn"
+      title="تعديل البيانات"
+      aria-label="تعديل البيانات"
+      (click)="openEdit(u)"
+    >
+      <app-icon name="edit" [size]="16" />
+    </button>
+    <button
+      type="button"
+      class="ra__btn"
+      title="الأدوار"
+      aria-label="تعديل الأدوار"
+      (click)="rolesFor.set(u)"
+    >
+      <app-icon name="shield" [size]="16" />
+    </button>
+    <button
+      type="button"
+      class="ra__btn"
+      title="إعادة تعيين كلمة المرور"
+      aria-label="إعادة تعيين كلمة المرور"
+      (click)="passwordFor.set(u)"
+    >
+      <app-icon name="key" [size]="16" />
+    </button>
+    <button
+      type="button"
+      class="ra__btn"
+      [class.ra__btn--warn]="u.isActive"
+      [title]="u.id === meId() ? 'لا يمكنك إيقاف حسابك' : u.isActive ? 'إيقاف' : 'تفعيل'"
+      [attr.aria-label]="u.isActive ? 'إيقاف المستخدم' : 'تفعيل المستخدم'"
+      [disabled]="u.id === meId() || busyId() === u.id"
+      (click)="toggleActive(u)"
+    >
+      <app-icon [name]="u.isActive ? 'pause' : 'play'" [size]="16" />
+    </button>
+    <button
+      type="button"
+      class="ra__btn ra__btn--danger"
+      [title]="u.id === meId() ? 'لا يمكنك حذف حسابك' : 'حذف'"
+      aria-label="حذف المستخدم"
+      [disabled]="u.id === meId() || busyId() === u.id"
+      (click)="remove(u)"
+    >
+      <app-icon name="trash" [size]="16" />
+    </button>
+  </div>
+</ng-template>

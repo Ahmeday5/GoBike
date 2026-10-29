@@ -1,0 +1,182 @@
+<app-page-header title="الإشعارات" subtitle="كل ما وصلك من تنبيهات وتحديثات">
+  <button
+    type="button"
+    class="btn"
+    [disabled]="!hasUnread() || markingAll()"
+    (click)="markAllRead()"
+  >
+    @if (markingAll()) {
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+    } @else {
+      <app-icon name="check" [size]="16" />
+    }
+    تعليم الكل كمقروء
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <div class="form-check form-switch np-switch">
+    <input
+      id="np-unread"
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      [checked]="f().unreadOnly"
+      (change)="toggleUnread($event)"
+    />
+    <label class="form-check-label" for="np-unread">غير المقروءة فقط</label>
+  </div>
+
+  <select
+    class="form-select"
+    aria-label="الأهمية"
+    [value]="f().severity"
+    (change)="select('severity', $event)"
+  >
+    <option value="">كل درجات الأهمية</option>
+    @for (o of severityOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  <select
+    class="form-select"
+    aria-label="النوع"
+    [value]="f().type"
+    (change)="select('type', $event)"
+  >
+    <option value="">كل الأنواع</option>
+    @for (o of typeOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (newCount()) {
+  <div class="np-pill-wrap">
+    <button type="button" class="np-pill" (click)="refresh()" aria-live="polite">
+      <app-icon name="refresh" [size]="14" />
+      <span class="ltr">{{ newCount() }}</span>
+      {{ newCount() === 1 ? 'إشعار جديد' : 'إشعارات جديدة' }} — تحديث
+    </button>
+  </div>
+}
+
+@if (res.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="res.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+@if (res.initialLoading()) {
+  <ul class="np-list" aria-busy="true">
+    @for (i of skeletons; track i) {
+      <li class="np-item">
+        <span class="skeleton np-item__icon"></span>
+        <span class="np-skeleton-body">
+          <span class="skeleton" style="display: block; width: 40%; height: 1rem"></span>
+          <span class="skeleton" style="display: block; width: 75%; height: 0.875rem"></span>
+        </span>
+      </li>
+    }
+  </ul>
+} @else {
+  <ul class="np-list" [class.np-list--refreshing]="res.loading()">
+    @for (n of rows(); track n.id; let i = $index) {
+      <li
+        class="np-item"
+        [class.np-item--unread]="!n.isRead"
+        [class.np-item--ack]="needsAck(n)"
+        [style.--i]="i"
+      >
+        <button type="button" class="np-item__main" (click)="open(n)">
+          <span [class]="'np-item__icon np-item__icon--' + severity(n).tone">
+            <app-icon [name]="severity(n).icon ?? 'bell'" [size]="18" />
+          </span>
+          <span class="np-item__body">
+            <span class="np-item__head">
+              <strong class="np-item__title">{{ n.title }}</strong>
+              @if (!n.isRead) {
+                <span class="np-item__dot" title="غير مقروء">
+                  <span class="visually-hidden">غير مقروء</span>
+                </span>
+              }
+            </span>
+            @if (n.body) {
+              <span class="np-item__text">{{ n.body }}</span>
+            }
+            <span class="np-item__meta">
+              <app-enum-chip [map]="SEVERITY" [value]="n.severity" [small]="true" />
+              <app-enum-chip [map]="TYPE" [value]="n.type" [small]="true" />
+              @if (n.requiresAcknowledgement) {
+                @if (n.acknowledgedAtUtc) {
+                  <app-chip tone="success" icon="check-circle" [small]="true"
+                    >تم تأكيد الاستلام</app-chip
+                  >
+                } @else {
+                  <app-chip tone="danger" icon="alert" [small]="true"
+                    >يتطلب تأكيد الاستلام</app-chip
+                  >
+                }
+              }
+              <time [attr.datetime]="n.createdAtUtc" [title]="n.createdAtUtc | cairoDate">
+                {{ n.createdAtUtc | cairoDate: 'relative' }}
+              </time>
+              @if (hasLink(n)) {
+                <span class="np-item__go">عرض <app-icon name="arrow-left" [size]="12" /></span>
+              }
+            </span>
+          </span>
+        </button>
+        @if (needsAck(n)) {
+          <button
+            type="button"
+            class="btn btn-sm btn-brand np-item__ack"
+            [disabled]="busyId() === n.id"
+            (click)="acknowledge(n)"
+          >
+            @if (busyId() === n.id) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            } @else {
+              <app-icon name="check-circle" [size]="14" />
+            }
+            تأكيد الاستلام
+          </button>
+        }
+      </li>
+    } @empty {
+      <li class="np-empty">
+        <app-empty-state
+          icon="bell"
+          [title]="hasFilters() ? 'لا توجد إشعارات مطابقة' : 'لا توجد إشعارات بعد'"
+          [text]="
+            hasFilters() ? 'جرّب تغيير الفلاتر' : 'ستظهر هنا التنبيهات والتحديثات فور وصولها.'
+          "
+        />
+      </li>
+    }
+  </ul>
+}
+
+@if (page(); as p) {
+  @if (p.count > f().pageSize || f().pageIndex > 1) {
+    <app-pagination
+      [pageIndex]="f().pageIndex"
+      [pageSize]="f().pageSize"
+      [count]="p.count"
+      [totalPages]="p.totalPages"
+      [disabled]="res.loading()"
+      (pageChange)="filters.patch({ pageIndex: $event })"
+      (pageSizeChange)="filters.patch({ pageSize: $event })"
+    />
+  }
+}

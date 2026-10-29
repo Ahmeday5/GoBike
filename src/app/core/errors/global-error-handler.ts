@@ -1,4 +1,4 @@
-import { ErrorHandler, Injectable, inject } from '@angular/core';
+import { ErrorHandler, Injectable, inject, untracked } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LoggerService } from '../services/logger.service';
 import { ToastService } from '../services/toast.service';
@@ -29,7 +29,9 @@ export class GlobalErrorHandler implements ErrorHandler {
     this.logger.error('[Unhandled]', err);
 
     if (!(err instanceof HttpErrorResponse)) {
-      this.toast.error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+      // Errors thrown inside an effect arrive here still in its reactive
+      // context; the toast's signal write must not fail and mask the real error.
+      untracked(() => this.toast.error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.'));
     }
   }
 

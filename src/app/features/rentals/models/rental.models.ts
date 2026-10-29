@@ -1,10 +1,12 @@
-import {
-  FaultSeverity,
-  InspectionResult,
-  RentPeriod,
-  RentalStatus,
-} from '@core/constants/enums';
+import { FaultSeverity, InspectionResult, RentPeriod, RentalStatus } from '@core/constants/enums';
 import { InspectionDto, RentalDto } from '@core/models/domain.models';
+
+/** `?motorcycleId=` / `?driverId=` and their friendly labels (for the removable chips). */
+export interface ScopeChip {
+  key: 'motorcycleId' | 'driverId';
+  icon: string;
+  label: string;
+}
 
 /**
  * URL-backed rentals filters (`GET /rentals`). Dates are Cairo calendar days
@@ -92,6 +94,17 @@ export interface ReturnMotorcycleRequest {
   faultSummary?: string | null;
   faults: { description: string; severity: FaultSeverity }[];
   notes?: string | null;
+}
+
+/**
+ * Whether the cancel action should be offered. The API is the judge (422
+ * outside the window); this only hides the button when we know it would fail.
+ */
+export function isRentalCancellable(r: RentalDto, now = Date.now()): boolean {
+  if (r.status !== 'Active') return false;
+  if (r.canCancel !== undefined && r.canCancel !== null) return r.canCancel;
+  if (r.cancellableUntilUtc) return Date.parse(r.cancellableUntilUtc) > now;
+  return true;
 }
 
 /**

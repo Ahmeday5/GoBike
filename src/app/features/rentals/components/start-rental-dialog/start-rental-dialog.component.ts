@@ -27,7 +27,7 @@ import { MoneyPipe } from '@shared/pipes/format.pipes';
 import { applyServerErrors } from '@shared/forms/server-errors';
 import { RentalsApi } from '../../data-access/rentals.api';
 import { StartRentalRequest } from '../../models/rental.models';
-import { PickerOption, RemotePickerComponent } from '../remote-picker/remote-picker.component';
+import { PickerOption, RemotePickerComponent } from '@shared/components/remote-picker/remote-picker.component';
 
 /** Start a rental (assignments.manage). Only `Available` motorcycles are offered. */
 @Component({
@@ -64,28 +64,24 @@ export class StartRentalDialogComponent {
   protected readonly searchMotorcycles = (term: string) =>
     this.lookups.motorcycles(term, true).pipe(
       map((rows) =>
-        rows.map(
-          (m): PickerOption<MotorcycleDto> => ({
-            value: m.id,
-            label: m.plateNumber,
-            hint: [m.brand, m.model, m.officeName].filter(Boolean).join(' · '),
-            data: m,
-          }),
-        ),
+        rows.map((m): PickerOption<MotorcycleDto> => ({
+          value: m.id,
+          label: m.plateNumber,
+          hint: [m.brand, m.model, m.officeName].filter(Boolean).join(' · '),
+          data: m,
+        })),
       ),
     );
 
   protected readonly searchDrivers = (term: string) =>
     this.lookups.drivers(term).pipe(
       map((rows) =>
-        rows.map(
-          (d): PickerOption<DriverDto> => ({
-            value: d.id,
-            label: d.fullName,
-            hint: d.phoneNumber + (d.hasActiveAssignment ? ' · لديه إيجار سارٍ' : ''),
-            data: d,
-          }),
-        ),
+        rows.map((d): PickerOption<DriverDto> => ({
+          value: d.id,
+          label: d.fullName,
+          hint: d.phoneNumber + (d.hasActiveAssignment ? ' · لديه إيجار سارٍ' : ''),
+          data: d,
+        })),
       ),
     );
 
@@ -108,9 +104,7 @@ export class StartRentalDialogComponent {
     ),
     { initialValue: this.form.getRawValue() },
   );
-  protected readonly periodLabel = computed(() =>
-    enumLabel(RENT_PERIOD, this.values().rentPeriod),
-  );
+  protected readonly periodLabel = computed(() => enumLabel(RENT_PERIOD, this.values().rentPeriod));
   protected readonly amounts = computed(() => ({
     rent: Number(this.values().rentAmount) || 0,
     deposit: Number(this.values().depositAmount) || 0,

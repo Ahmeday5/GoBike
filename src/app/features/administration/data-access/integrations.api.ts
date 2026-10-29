@@ -3,7 +3,7 @@ import { Observable, map } from 'rxjs';
 import { ApiService } from '@core/services/api.service';
 import { PagedResponse } from '@core/models/api-response.model';
 import { toPaged } from '@core/utils/api-list.util';
-import { withSkipLoader } from '@core/http/http-context.tokens';
+import { withSilentErrors, withSkipLoader } from '@core/http/http-context.tokens';
 import {
   DeliveriesQuery,
   GpsHealthDto,
@@ -18,11 +18,14 @@ export class IntegrationsApi {
   private readonly api = inject(ApiService);
 
   gpsHealth(): Observable<GpsHealthDto> {
-    return this.api
-      .get<unknown>('gps/health', { context: withSkipLoader() })
-      .pipe(
-        map((r) => (r && typeof r === 'object' && !Array.isArray(r) ? (r as GpsHealthDto) : {})),
-      );
+    return (
+      this.api
+        // The health panel renders its own error + retry.
+        .get<unknown>('gps/health', { context: withSilentErrors(withSkipLoader()) })
+        .pipe(
+          map((r) => (r && typeof r === 'object' && !Array.isArray(r) ? (r as GpsHealthDto) : {})),
+        )
+    );
   }
 
   syncLogs(query: SyncLogsQuery): Observable<PagedResponse<SyncLogDto>> {

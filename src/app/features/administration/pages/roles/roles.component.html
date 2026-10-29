@@ -1,0 +1,155 @@
+<app-page-header title="الأدوار والصلاحيات" subtitle="ما يستطيع كل دور رؤيته وفعله في لوحة التحكم">
+  <button type="button" class="btn btn-brand" (click)="openCreate()">
+    <app-icon name="plus" [size]="16" />
+    دور جديد
+  </button>
+</app-page-header>
+
+@if (roles.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="roles.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<div class="rl">
+  <!-- ── Roles list ── -->
+  <aside class="panel rl__side" aria-label="الأدوار">
+    @if (roles.initialLoading()) {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <span class="skeleton rl__skel"></span>
+      }
+    } @else {
+      <ul class="rl__list">
+        @for (r of list(); track r.name) {
+          <li>
+            <button
+              type="button"
+              class="rl__role"
+              [class.rl__role--active]="r.name === selected()?.name"
+              [attr.aria-current]="r.name === selected()?.name ? 'true' : null"
+              (click)="selectRole(r.name)"
+            >
+              <span class="rl__role-icon">
+                <app-icon [name]="roleIcon(r.name)" [size]="16" />
+              </span>
+              <span class="rl__role-text">
+                <strong>{{ label(r.name) }}</strong>
+                <small class="muted">
+                  @if (label(r.name) !== r.name) {
+                    <span class="ltr">{{ r.name }}</span> ·
+                  }
+                  {{ r.permissions.length | num }} صلاحية
+                  @if ((r.userCount ?? null) !== null) {
+                    · {{ r.userCount | num }} مستخدم
+                  }
+                </small>
+              </span>
+              @if (r.name === selected()?.name && dirty()) {
+                <span class="rl__dot" title="تغييرات غير محفوظة"></span>
+              }
+            </button>
+          </li>
+        } @empty {
+          <li>
+            <app-empty-state icon="shield" title="لا توجد أدوار" />
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+
+  <!-- ── Permission matrix ── -->
+  <section class="rl__main">
+    @if (selected(); as role) {
+      <div class="panel rl__bar" [class.rl__bar--dirty]="dirty()">
+        <div class="rl__bar-title">
+          <h2 class="panel__title">
+            <app-icon name="shield" [size]="18" />
+            {{ label(role.name) }}
+          </h2>
+          <div class="rl__bar-chips">
+            @if (role.builtIn) {
+              <app-chip [small]="true" icon="lock">دور أساسي</app-chip>
+            } @else {
+              <app-chip tone="purple" [small]="true">دور مخصص</app-chip>
+            }
+            <app-chip tone="info" [small]="true">
+              {{ draft().length | num }} / {{ catalogSize() | num }} صلاحية
+            </app-chip>
+            @if (dirty()) {
+              <app-chip tone="warning" icon="edit" [small]="true">
+                {{ changeCount() | num }} تغيير غير محفوظ
+              </app-chip>
+            }
+          </div>
+        </div>
+        <div class="rl__bar-actions">
+          @if (!role.builtIn) {
+            <button type="button" class="btn btn-ghost rl__delete" (click)="remove(role)">
+              <app-icon name="trash" [size]="16" />
+              حذف الدور
+            </button>
+          }
+          @if (!isAdminRole()) {
+            <button type="button" class="btn" [disabled]="!dirty() || saving()" (click)="discard()">
+              تراجع
+            </button>
+            <button
+              type="button"
+              class="btn btn-brand"
+              [disabled]="!dirty() || saving()"
+              (click)="save()"
+            >
+              @if (saving()) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              }
+              حفظ الصلاحيات
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (isAdminRole()) {
+        <p class="rl__note">
+          <app-icon name="lock" [size]="16" />
+          دور الأدمن يملك كل الصلاحيات دائمًا ولا يمكن تعديله من هنا.
+        </p>
+      }
+      @if (catalog.error()) {
+        <p class="rl__note rl__note--warn">
+          <app-icon name="alert" [size]="16" />
+          تعذّر تحميل قائمة الصلاحيات الكاملة؛ تظهر فقط الصلاحيات المعروفة من الأدوار.
+          <button type="button" class="link-btn" (click)="catalog.reload()">إعادة المحاولة</button>
+        </p>
+      }
+
+      @if (catalog.initialLoading()) {
+        <div class="rl__skel-grid" aria-busy="true">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <span class="skeleton rl__skel-card"></span>
+          }
+        </div>
+      } @else {
+        <app-permission-matrix
+          [permissions]="catalog.value() ?? []"
+          [value]="draft()"
+          [original]="role.permissions"
+          [readonly]="isAdminRole() || saving()"
+          (valueChange)="draft.set($event)"
+        />
+      }
+    } @else if (!roles.initialLoading()) {
+      <div class="panel">
+        <app-empty-state icon="shield" title="اختر دورًا لعرض صلاحياته" />
+      </div>
+    }
+  </section>
+</div>
+
+<app-role-create-dialog
+  [open]="createOpen()"
+  [roles]="list()"
+  (closed)="createOpen.set(false)"
+  (created)="onCreated($event)"
+/>

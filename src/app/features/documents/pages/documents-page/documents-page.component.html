@@ -1,0 +1,198 @@
+<app-page-header
+  title="المستندات"
+  subtitle="رخص وعقود وصور الموتوسيكلات والسائقين وكل ما يخص الأسطول"
+>
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Documents.Manage"
+    (click)="uploadOpen.set(true)"
+  >
+    <app-icon name="upload" [size]="16" />
+    رفع مستند
+  </button>
+</app-page-header>
+
+<app-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="setTab($event)" />
+
+<div class="filters" role="search">
+  @if (activeTab() === 'all') {
+    <app-owner-filter
+      [ownerType]="ownerType()"
+      [ownerId]="f().ownerId"
+      (changed)="selectOwner($event)"
+    />
+  } @else {
+    <select class="form-select" aria-label="خلال" [value]="f().days" (change)="selectDays($event)">
+      @for (d of daysOptions; track d) {
+        <option [value]="d">خلال {{ d }} يومًا</option>
+      }
+    </select>
+    <div class="form-check form-switch dp-switch">
+      <input
+        id="dp-expired"
+        class="form-check-input"
+        type="checkbox"
+        role="switch"
+        [checked]="f().includeExpired"
+        (change)="toggleExpired($event)"
+      />
+      <label class="form-check-label" for="dp-expired">إظهار المنتهية</label>
+    </div>
+  }
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (docs.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="docs.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+@if (activeTab() === 'all' && !ownerChosen()) {
+  <section class="panel">
+    <app-empty-state
+      icon="filter"
+      [title]="
+        ownerSource()
+          ? (ownerSource()!.kind === 'list' ? 'اختر ' : 'أدخل ') + ownerSource()!.field
+          : 'اختر نوع المالك أولًا'
+      "
+      [text]="
+        ownerSource()?.kind === 'id'
+          ? 'لا توجد قائمة لهذا النوع بعد، فالصق المعرّف (GUID) الخاص به لعرض مستنداته.'
+          : ownerSource()
+            ? 'ستظهر كل مستندات ' + ownerSource()!.field + ' الذي تختاره.'
+            : 'المستندات تُعرض لكل مالك على حدة: اختر النوع (موتوسيكل، سائق، حادث…) ثم حدّد المالك.'
+      "
+    />
+  </section>
+} @else {
+  <app-data-table
+    [columns]="columns()"
+    [data]="rows()"
+    [loading]="docs.loading()"
+    [emptyIcon]="activeTab() === 'expiring' ? 'clock' : 'archive'"
+    [emptyTitle]="
+      activeTab() === 'expiring' ? 'لا توجد مستندات تنتهي قريبًا' : 'لا توجد مستندات لهذا المالك'
+    "
+    [emptyText]="
+      activeTab() === 'expiring'
+        ? 'كل المستندات صالحة خلال الفترة المختارة.'
+        : 'ارفع الرخص والعقود والصور من زر «رفع مستند».'
+    "
+  />
+}
+
+@if (count() > f().pageSize) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="count()"
+    [totalPages]="totalPages()"
+    [disabled]="docs.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-upload-document-dialog
+  [open]="uploadOpen()"
+  [ownerType]="ownerType()"
+  [ownerId]="f().ownerId"
+  (closed)="uploadOpen.set(false)"
+  (uploaded)="onUploaded($event)"
+/>
+
+<ng-template #titleTpl let-d>
+  <div class="dp-title">
+    <span class="dp-title__icon"><app-icon [name]="categoryIcon(d)" [size]="16" /></span>
+    <span class="dp-title__text">
+      <strong>{{ d.title || d.fileName || 'مستند' }}</strong>
+      @if (d.title && d.fileName) {
+        <small class="muted ltr">{{ d.fileName }}</small>
+      }
+    </span>
+  </div>
+</ng-template>
+<ng-template #categoryTpl let-d>
+  <app-enum-chip [map]="CATEGORY" [value]="d.category" [small]="true" />
+</ng-template>
+<ng-template #ownerTpl let-d>
+  <div class="dp-owner">
+    <span class="muted">{{ ownerTypeLabel(d) }}</span>
+    @if (ownerLink(d); as link) {
+      <a [routerLink]="link" [class.ltr]="d.ownerType === 'Motorcycle'">{{
+        d.ownerName || 'عرض'
+      }}</a>
+    } @else {
+      <span>{{ d.ownerName || '—' }}</span>
+    }
+  </div>
+</ng-template>
+<ng-template #expiryTpl let-d>
+  @if (d.expiryDate) {
+    @switch (expiryTone(d)) {
+      @case ('danger') {
+        <app-chip tone="danger" icon="alert" [small]="true"
+          >منتهي {{ d.expiryDate | cairoDate: 'date' }}</app-chip
+        >
+      }
+      @case ('warning') {
+        <app-chip tone="warning" icon="clock" [small]="true">
+          {{ d.expiryDate | cairoDate: 'date' }}
+          @if (daysToExpiry(d) !== null) {
+            · بعد {{ daysToExpiry(d) }} يوم
+          }
+        </app-chip>
+      }
+      @default {
+        <span>{{ d.expiryDate | cairoDate: 'date' }}</span>
+      }
+    }
+  } @else {
+    <span class="muted">بدون انتهاء</span>
+  }
+</ng-template>
+<ng-template #sizeTpl let-d>
+  <span class="ltr">{{ d.sizeBytes ? (d.sizeBytes | bytes) : '—' }}</span>
+</ng-template>
+<ng-template #uploadedTpl let-d>
+  {{ d.uploadedAtUtc ?? d.createdAtUtc | cairoDate: 'date' }}
+</ng-template>
+<ng-template #actionsTpl let-d>
+  <div class="dp-actions">
+    <button
+      type="button"
+      class="btn btn-sm btn-ghost"
+      title="تحميل"
+      [disabled]="busyId() === d.id"
+      (click)="download(d)"
+    >
+      @if (busyId() === d.id) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      } @else {
+        <app-icon name="download" [size]="16" />
+      }
+      <span class="visually-hidden">تحميل</span>
+    </button>
+    <button
+      *appHasPermission="P.Documents.Manage"
+      type="button"
+      class="btn btn-sm btn-ghost dp-delete"
+      title="حذف"
+      (click)="remove(d)"
+    >
+      <app-icon name="trash" [size]="16" />
+      <span class="visually-hidden">حذف</span>
+    </button>
+  </div>
+</ng-template>

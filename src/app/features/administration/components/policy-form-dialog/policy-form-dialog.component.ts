@@ -20,6 +20,7 @@ import {
 import { startWith } from 'rxjs';
 import { MAINTENANCE_ALERT_LEVEL } from '@core/constants/enums';
 import { ApiError } from '@core/models/api-response.model';
+import { DialogService } from '@core/services/dialog.service';
 import { ToastService } from '@core/services/toast.service';
 import { formatMoney } from '@core/utils/format.util';
 import { ModalComponent } from '@shared/components/modal/modal.component';
@@ -39,10 +40,7 @@ import { ThresholdBarComponent } from '../threshold-bar/threshold-bar.component'
 import { RecipientsPickerComponent } from '../recipients-picker/recipients-picker.component';
 
 type RecipientControl =
-  | 'firstWarningRecipients'
-  | 'secondWarningRecipients'
-  | 'criticalRecipients'
-  | 'overdueRecipients';
+  'firstWarningRecipients' | 'secondWarningRecipients' | 'criticalRecipients' | 'overdueRecipients';
 
 /** Fine example shown under the price field ("going 50 km over costs …"). */
 const EXAMPLE_OVER_KM = 50;
@@ -81,6 +79,7 @@ export class PolicyFormDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(PoliciesApi);
   private readonly toast = inject(ToastService);
+  private readonly dialog = inject(DialogService);
 
   readonly open = input.required<boolean>();
   readonly policy = input<MaintenancePolicyDto | null>(null);
@@ -144,7 +143,10 @@ export class PolicyFormDialogComponent {
   protected readonly replacesDefault = computed(() => {
     const current = this.currentDefault();
     return (
-      !!this.value().isDefault && !!current && !this.isEditingDefault() && current.id !== this.policy()?.id
+      !!this.value().isDefault &&
+      !!current &&
+      !this.isEditingDefault() &&
+      current.id !== this.policy()?.id
     );
   });
 
@@ -194,20 +196,41 @@ export class PolicyFormDialogComponent {
     return this.form.controls[control].value;
   }
 
-  protected setRecipients(
-    control: RecipientControl,
-    list: string[],
-  ): void {
+  protected setRecipients(control: RecipientControl, list: string[]): void {
     this.form.controls[control].setValue(list);
     this.form.controls[control].markAsDirty();
   }
 
-  protected submit(): void {
+  /**
+   * The default policy's fine price drives every new overdue fine on bikes
+   * without their own policy — spell out old → new before changing it.
+   * Covers editing the default's price and promoting a policy with a
+   * different price to default.
+   */
+  private async confirmFineChange(newFine: number, makesDefault: boolean): Promise<boolean> {
+    const editing = this.policy();
+    const base = editing?.isDefault ? editing : makesDefault ? this.currentDefault() : null;
+    if (!base) return true;
+    const oldFine = Number(base.overdueFinePerKm ?? 0);
+    if (Math.abs(oldFine - newFine) < 0.005) return true;
+    return this.dialog.confirm({
+      title: 'تغيير سعر غرامة التأخير؟',
+      message:
+        `سعر الغرامة لكل كم في السياسة الافتراضية سيتغير من ${formatMoney(oldFine)} إلى ${formatMoney(newFine)}. ` +
+        'يُطبَّق السعر الجديد على كل كم تأخير يُحتسب بعد الحفظ في الموتوسيكلات التابعة للسياسة الافتراضية؛ ' +
+        'الغرامات المسجلة سابقًا لا تتغير.',
+      type: 'warning',
+      confirmText: 'حفظ السعر الجديد',
+    });
+  }
+
+  protected async submit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const v = this.form.getRawValue();
+    if (!(await this.confirmFineChange(Number(v.overdueFinePerKm) || 0, v.isDefault))) return;
     const body: SaveMaintenancePolicyRequest = {
       name: v.name.trim(),
       description: v.description.trim() || null,

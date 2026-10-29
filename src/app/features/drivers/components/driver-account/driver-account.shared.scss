@@ -1,0 +1,76 @@
+// Small bits shared by the account tab's list components (charges, payments).
+
+.ac-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+.ac-chips__label {
+  min-width: 3.5rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--txt3);
+}
+// A toggle wrapping an <app-enum-chip>: the chip keeps its tone, the ring shows selection.
+.ac-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem;
+  border: 2px solid transparent;
+  border-radius: var(--r-full);
+  background: none;
+  color: var(--txt2);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity var(--dur-2),
+    border-color var(--dur-2);
+
+  &:hover {
+    opacity: 1;
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+  // Plain-text "all" option.
+  &:not(:has(app-enum-chip)) {
+    padding-inline: 0.625rem;
+    background: var(--bg3);
+  }
+}
+.ac-chip--on {
+  border-color: var(--primary);
+  opacity: 1;
+}
+
+.ac-desc {
+  white-space: normal;
+}
+.ac-plate {
+  margin-inline-start: 0.5rem;
+  font-size: var(--fs-xs);
+}
+.ac-sub {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+}
+.ac-struck {
+  text-decoration: line-through;
+  color: var(--txt3);
+}
+.ac-danger {
+  color: var(--re);
+}
+.ac-switch-label {
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+}

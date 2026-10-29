@@ -1,0 +1,96 @@
+.md-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.md-actions__danger {
+  color: var(--re);
+}
+
+.md-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+
+  // Health rail on the inline-start edge (color + the chip's text/icon).
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 0.25rem;
+    background: var(--gr);
+  }
+}
+.md-hero--red::before {
+  background: var(--re);
+}
+.md-hero__avatar {
+  width: 3.75rem;
+  height: 3.75rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 1.125rem;
+  background: var(--primary-gradient, var(--primary));
+  color: var(--on-primary);
+  box-shadow: var(--shadow-brand);
+  animation: pop-in var(--dur-4) var(--ease-spring) both;
+}
+.md-hero__body {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+.md-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.md-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  app-icon {
+    color: var(--txt3);
+  }
+}
+
+.md-skel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.md-skel-grid__item {
+  display: block;
+  height: 10rem;
+  border-radius: var(--rl);
+}
+
+.md-tab {
+  margin-top: 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .md-hero__avatar {
+    width: 3rem;
+    height: 3rem;
+  }
+  .md-skel-grid {
+    grid-template-columns: 1fr;
+  }
+}

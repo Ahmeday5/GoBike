@@ -1,0 +1,301 @@
+@if (notFound()) {
+  <app-page-header title="تفاصيل الإيجار" [backLink]="listLink" />
+  <div class="panel">
+    <app-empty-state
+      icon="route"
+      title="الإيجار غير موجود"
+      text="ربما حُذف هذا الإيجار أو يتبع مكتبًا آخر."
+    />
+  </div>
+} @else {
+  <app-page-header
+    [title]="rental()?.plateNumber ? 'إيجار ' + rental()?.plateNumber : 'تفاصيل الإيجار'"
+    [subtitle]="rental()?.driverName ? 'مع السائق ' + rental()?.driverName : ''"
+    [backLink]="listLink"
+  >
+    @if (rental(); as r) {
+      @if (r.status === 'Active') {
+        <div class="rd-actions">
+          @if (can().inspect) {
+            <button type="button" class="btn btn-brand" (click)="returnOpen.set(true)">
+              <app-icon name="check-circle" [size]="16" />
+              استلام الموتوسيكل
+            </button>
+          }
+          @if (can().manage) {
+            <button type="button" class="btn" (click)="termsOpen.set(true)">
+              <app-icon name="edit" [size]="16" />
+              تعديل الشروط
+            </button>
+            @if (cancellable()) {
+              <button type="button" class="btn btn-ghost rd-danger" (click)="cancelOpen.set(true)">
+                <app-icon name="ban" [size]="16" />
+                إلغاء الإيجار
+              </button>
+            }
+          }
+        </div>
+      }
+    }
+  </app-page-header>
+
+  @if (rentalRes.initialLoading()) {
+    <div class="panel rd-hero" aria-busy="true">
+      <span class="skeleton rd-hero__icon"></span>
+      <div class="rd-hero__body">
+        <span class="skeleton" style="width: 10rem; height: 1.25rem"></span>
+        <span class="skeleton" style="width: 22rem; max-width: 100%; height: 0.875rem"></span>
+        <span class="skeleton" style="width: 16rem; max-width: 100%; height: 0.875rem"></span>
+      </div>
+    </div>
+    <div class="rd-grid">
+      @for (s of [0, 1]; track s) {
+        <div class="panel" aria-busy="true">
+          <span class="skeleton" style="width: 8rem; height: 1rem"></span>
+          <div class="rd-skel-kv">
+            @for (k of [0, 1, 2, 3]; track k) {
+              <span class="skeleton" style="height: 2.25rem"></span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (loadFailed() && !rental()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ rentalRes.error()?.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="rentalRes.reload()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    @if (rental(); as r) {
+      <section
+        class="panel rd-hero"
+        [class.rd-hero--ended]="r.status === 'Ended'"
+        [class.rd-hero--cancelled]="r.status === 'Cancelled'"
+      >
+        <span class="rd-hero__icon" aria-hidden="true"><app-icon name="bike" [size]="28" /></span>
+        <div class="rd-hero__body">
+          <div class="rd-hero__chips">
+            <app-enum-chip [map]="STATUS" [value]="r.status" />
+            @if (inspection(); as i) {
+              <app-enum-chip [map]="RESULT" [value]="i.result" />
+            }
+            @if (r.status === 'Active' && cancellable() && r.cancellableUntilUtc) {
+              <app-chip tone="warning" icon="clock">
+                يمكن الإلغاء حتى {{ r.cancellableUntilUtc | cairoDate }}
+              </app-chip>
+            }
+          </div>
+          <ul class="rd-hero__meta">
+            <li>
+              <app-icon name="bike" [size]="14" />
+              @if (motorcycleLink(); as link) {
+                <a class="link-btn ltr" [routerLink]="link">{{
+                  r.plateNumber || 'عرض الموتوسيكل'
+                }}</a>
+              } @else {
+                <span class="ltr">{{ r.plateNumber || '—' }}</span>
+              }
+              @if (r.motorcycleBrand || r.motorcycleModel) {
+                <span class="muted">{{ r.motorcycleBrand }} {{ r.motorcycleModel }}</span>
+              }
+            </li>
+            <li>
+              <app-icon name="user" [size]="14" />
+              @if (driverLink(); as link) {
+                <a class="link-btn" [routerLink]="link">{{ r.driverName || 'عرض السائق' }}</a>
+              } @else {
+                <span>{{ r.driverName || '—' }}</span>
+              }
+              @if (r.driverPhone) {
+                <span class="muted ltr">{{ r.driverPhone }}</span>
+              }
+            </li>
+            <li>
+              <app-icon name="calendar" [size]="14" />
+              {{ r.startAtUtc | cairoDate }}
+              <span class="muted">←</span>
+              {{ r.endAtUtc ? (r.endAtUtc | cairoDate) : 'حتى الآن' }}
+            </li>
+            @if (r.officeName) {
+              <li><app-icon name="building" [size]="14" />{{ r.officeName }}</li>
+            }
+          </ul>
+        </div>
+      </section>
+
+      @if (loadFailed()) {
+        <div
+          class="alert alert-danger d-flex justify-content-between align-items-center"
+          role="alert"
+        >
+          <span>تعذر تحديث بيانات الإيجار: {{ rentalRes.error()?.message }}</span>
+          <button type="button" class="btn btn-sm" (click)="rentalRes.reload()">
+            إعادة المحاولة
+          </button>
+        </div>
+      }
+
+      <div class="rd-grid">
+        <section class="panel" style="--i: 0">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="cash" [size]="18" />القيمة المالية والعقد</h2>
+          </header>
+          <dl class="kv">
+            <div>
+              <dt>قيمة الإيجار</dt>
+              <dd>
+                <span class="amount">{{ r.rentAmount | money }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>فترة الإيجار</dt>
+              <dd>{{ periodLabel() }}</dd>
+            </div>
+            <div>
+              <dt>مبلغ التأمين</dt>
+              <dd>
+                <span class="amount">{{ r.depositAmount | money }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>رقم العقد</dt>
+              <dd class="ltr">{{ r.contractNumber || '—' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="panel" style="--i: 1">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="clock" [size]="18" />المدة والتسجيل</h2>
+          </header>
+          <dl class="kv">
+            <div>
+              <dt>بداية الإيجار</dt>
+              <dd>{{ r.startAtUtc | cairoDate }}</dd>
+            </div>
+            <div>
+              <dt>نهاية الإيجار</dt>
+              <dd>{{ r.endAtUtc ? (r.endAtUtc | cairoDate) : 'سارٍ' }}</dd>
+            </div>
+            @if (r.returnedAtUtc) {
+              <div>
+                <dt>وقت الاستلام</dt>
+                <dd>{{ r.returnedAtUtc | cairoDate }}</dd>
+              </div>
+            }
+            <div>
+              <dt>سجّله</dt>
+              <dd>{{ r.createdByName || '—' }}</dd>
+            </div>
+            @if (r.createdAtUtc) {
+              <div>
+                <dt>تاريخ التسجيل</dt>
+                <dd>{{ r.createdAtUtc | cairoDate }}</dd>
+              </div>
+            }
+            @if (r.status === 'Active' && r.cancellableUntilUtc) {
+              <div>
+                <dt>نهاية مهلة الإلغاء</dt>
+                <dd>{{ r.cancellableUntilUtc | cairoDate }}</dd>
+              </div>
+            }
+          </dl>
+        </section>
+      </div>
+
+      @if (r.status === 'Cancelled') {
+        <section class="panel rd-cancel" style="--i: 2">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="ban" [size]="18" />تم إلغاء الإيجار</h2>
+          </header>
+          <dl class="kv">
+            <div>
+              <dt>وقت الإلغاء</dt>
+              <dd>{{ r.cancelledAtUtc | cairoDate }}</dd>
+            </div>
+            <div class="rd-wide">
+              <dt>السبب</dt>
+              <dd class="rd-pre">{{ r.cancelReason || '—' }}</dd>
+            </div>
+          </dl>
+        </section>
+      }
+
+      @if (r.status === 'Ended' || inspection()) {
+        <section class="panel" style="--i: 3">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="search" [size]="18" />فحص الاستلام</h2>
+            @if (inspectionLink(); as link) {
+              <a class="btn btn-sm" [routerLink]="link">
+                عرض تقرير الفحص
+                <app-icon name="chevron-left" [size]="14" />
+              </a>
+            }
+          </header>
+          @if (inspection(); as i) {
+            <app-inspection-report [inspection]="i" />
+          } @else if (inspectionLoading()) {
+            <div class="rd-skel-kv" aria-busy="true">
+              @for (k of [0, 1, 2, 3]; track k) {
+                <span class="skeleton" style="height: 2.25rem"></span>
+              }
+            </div>
+          } @else {
+            <app-empty-state
+              icon="search"
+              title="لا يوجد تقرير فحص لهذا الإيجار"
+              [text]="
+                can().readInspections ? 'ربما انتهى الإيجار قبل تسجيل الفحوصات في النظام.' : ''
+              "
+            />
+          }
+        </section>
+      }
+
+      @if (r.terms || r.notes) {
+        <section class="panel" style="--i: 4">
+          <header class="panel__head">
+            <h2 class="panel__title"><app-icon name="file" [size]="18" />الشروط والملاحظات</h2>
+          </header>
+          <dl class="kv">
+            @if (r.terms) {
+              <div class="rd-wide">
+                <dt>شروط الإيجار</dt>
+                <dd class="rd-pre">{{ r.terms }}</dd>
+              </div>
+            }
+            @if (r.notes) {
+              <div class="rd-wide">
+                <dt>ملاحظات</dt>
+                <dd class="rd-pre">{{ r.notes }}</dd>
+              </div>
+            }
+          </dl>
+        </section>
+      }
+
+      <section class="panel" style="--i: 5" *appHasPermission="P.Documents.Read">
+        <app-documents-panel ownerType="RentalAssignment" [ownerId]="r.id" />
+      </section>
+    }
+  }
+}
+
+<app-return-rental-dialog
+  [open]="returnOpen()"
+  [rental]="rental()"
+  (closed)="returnOpen.set(false)"
+  (returned)="onReturned($event)"
+/>
+<app-cancel-rental-dialog
+  [open]="cancelOpen()"
+  [rental]="rental()"
+  (closed)="cancelOpen.set(false)"
+  (cancelled)="onCancelled()"
+/>
+<app-rental-terms-dialog
+  [open]="termsOpen()"
+  [rental]="rental()"
+  (closed)="termsOpen.set(false)"
+  (saved)="onTermsSaved()"
+/>

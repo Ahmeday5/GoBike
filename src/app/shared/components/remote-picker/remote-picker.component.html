@@ -46,7 +46,9 @@
       <div class="rp__list">
         @if (results().loading) {
           @for (s of [1, 2, 3]; track s) {
-            <div class="rp__skeleton"><span class="skeleton"></span><span class="skeleton"></span></div>
+            <div class="rp__skeleton">
+              <span class="skeleton"></span><span class="skeleton"></span>
+            </div>
           }
         } @else {
           @for (o of results().items; track o.value; let i = $index) {

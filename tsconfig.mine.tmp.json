@@ -1,6 +1,0 @@
-{
-  "extends": "./tsconfig.app.json",
-  "compilerOptions": { "noEmit": true },
-  "files": [],
-  "include": ["src/app/features/oil-changes/**/*.ts","src/app/features/alerts/**/*.ts","src/app/features/notifications/**/*.ts","src/app/features/documents/**/*.ts","src/**/*.d.ts"]
-}

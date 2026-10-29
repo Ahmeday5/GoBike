@@ -1,0 +1,113 @@
+.rd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.rd-danger {
+  color: var(--re);
+}
+
+.rd-hero {
+  --rail: var(--bl);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+
+  // Status rail on the inline-start edge (status also shown as a chip — not color alone).
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 0.25rem;
+    background: var(--rail);
+  }
+}
+.rd-hero--ended {
+  --rail: var(--txt3);
+}
+.rd-hero--cancelled {
+  --rail: var(--re);
+}
+.rd-hero--ok {
+  --rail: var(--gr);
+}
+.rd-hero__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 1rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.rd-hero__body {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+.rd-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.rd-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  app-icon {
+    color: var(--txt3);
+  }
+}
+
+.rd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 0 1rem;
+}
+
+.rd-skel-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.875rem 1.25rem;
+  margin-top: 0.875rem;
+}
+
+.rd-wide {
+  grid-column: 1 / -1;
+}
+.rd-pre {
+  font-weight: 500;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+.rd-cancel {
+  border-inline-start: 0.25rem solid var(--re);
+}
+
+@media (max-width: 575.98px) {
+  .rd-hero__icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .rd-grid {
+    grid-template-columns: 1fr;
+  }
+}

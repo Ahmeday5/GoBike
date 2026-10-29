@@ -1,0 +1,152 @@
+<app-page-header title="فحوصات الاستلام" subtitle="نتائج فحص الموتوسيكلات عند عودتها من السائقين" />
+
+<div class="filters" role="search">
+  <select
+    class="form-select"
+    aria-label="النتيجة"
+    [value]="f().result"
+    (change)="select('result', $event)"
+  >
+    <option value="">كل النتائج</option>
+    @for (o of resultOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  @for (c of scopeChips(); track c.key) {
+    <button
+      type="button"
+      class="rl-scope"
+      [attr.aria-label]="'إزالة فلتر ' + c.label"
+      (click)="clearScope(c.key)"
+    >
+      <app-icon [name]="c.icon" [size]="14" />
+      <span>{{ c.label }}</span>
+      <app-icon name="close" [size]="12" />
+    </button>
+  }
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (inspections.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="inspections.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="inspections.loading()"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="search"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا توجد فحوصات بعد'"
+  [emptyText]="
+    hasFilters() ? 'جرّب تغيير الفلاتر' : 'تُسجَّل الفحوصات عند استلام الموتوسيكل من السائق'
+  "
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="inspections.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<!-- Links inside a clickable row stop the click from also opening the inspection. -->
+<ng-template #dateTpl let-i>{{ i.inspectedAtUtc ?? i.returnedAtUtc | cairoDate }}</ng-template>
+<ng-template #plateTpl let-i>
+  @if (can().motorcycles) {
+    <a
+      class="link-btn ltr"
+      [routerLink]="motorcycleLink(i.motorcycleId)"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+    >
+      {{ i.plateNumber || '—' }}
+    </a>
+  } @else {
+    <strong class="ltr">{{ i.plateNumber || '—' }}</strong>
+  }
+</ng-template>
+<ng-template #driverTpl let-i>
+  @if (i.driverId && can().drivers) {
+    <a
+      class="link-btn"
+      [routerLink]="driverLink(i.driverId)"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+    >
+      {{ i.driverName || '—' }}
+    </a>
+  } @else {
+    {{ i.driverName || '—' }}
+  }
+</ng-template>
+<ng-template #resultTpl let-i>
+  <app-enum-chip [map]="RESULT" [value]="i.result" [small]="true" />
+</ng-template>
+<ng-template #faultsTpl let-i>
+  @if (i.result === 'HasFaults') {
+    <strong>{{ i.faults?.length ?? 0 }} عطل</strong>
+    @if (i.faultSummary) {
+      <div
+        class="muted text-truncate rl-sub"
+        style="max-width: 16rem"
+        [attr.title]="i.faultSummary"
+      >
+        {{ i.faultSummary }}
+      </div>
+    }
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #byTpl let-i>{{ i.inspectedByName || '—' }}</ng-template>
+<ng-template #repairTpl let-i>
+  @if (i.maintenanceRecordId) {
+    @if (can().maintenance) {
+      <a
+        class="link-btn"
+        [routerLink]="repairLink(i.maintenanceRecordId)"
+        (click)="$event.stopPropagation()"
+        (keydown.enter)="$event.stopPropagation()"
+      >
+        <app-icon name="wrench" [size]="14" />
+        سجل الإصلاح
+      </a>
+    } @else {
+      <span><app-icon name="wrench" [size]="14" /> يوجد سجل</span>
+    }
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>

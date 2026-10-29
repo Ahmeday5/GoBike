@@ -1,0 +1,51 @@
+.rl-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--txt2);
+
+  .form-control {
+    min-width: 9rem;
+  }
+}
+
+/* Removable "scoped to this bike / driver" filter (deep links). */
+.rl-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-3);
+
+  &:hover {
+    background: var(--bg3);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+}
+
+.rl-sub {
+  font-size: var(--fs-xs);
+}
+
+.rl-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+.rl-danger {
+  color: var(--re);
+}

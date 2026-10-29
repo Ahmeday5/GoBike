@@ -32,7 +32,6 @@ import {
 import { applyServerErrors } from '@shared/forms/server-errors';
 import { RentalsApi } from '../../data-access/rentals.api';
 import { ReturnMotorcycleRequest } from '../../models/rental.models';
-import { inspectionLink } from '../../rentals.links';
 
 /**
  * Return a rented motorcycle (inspections.manage) via `POST /rentals/{id}/return`:
@@ -85,10 +84,17 @@ export class ReturnRentalDialogComponent {
     { initialValue: this.form.getRawValue() },
   );
   protected readonly result = computed(() => this.values().result);
-  /** "At least one fault OR a summary" — only enforced for HasFaults. */
+  /**
+   * "At least one fault OR a summary" — only enforced for HasFaults. Rows left
+   * blank don't count as faults (the dialog seeds one empty row).
+   */
   protected readonly faultsMissing = computed(() => {
     const v = this.values();
-    return v.result === 'HasFaults' && v.faults.length === 0 && !v.faultSummary.trim();
+    return (
+      v.result === 'HasFaults' &&
+      !v.faults.some((f) => f.description.trim()) &&
+      !v.faultSummary.trim()
+    );
   });
 
   protected readonly repairLink = computed(() => {
@@ -97,7 +103,7 @@ export class ReturnRentalDialogComponent {
   });
   protected readonly inspectionLink = computed(() => {
     const id = this.outcome()?.id;
-    return id ? inspectionLink(id) : null;
+    return id ? APP_ROUTES.inspection(id) : null;
   });
 
   constructor() {
@@ -124,6 +130,13 @@ export class ReturnRentalDialogComponent {
     this.submitted.set(true);
     const c = this.form.controls;
     const hasFaults = c.result.value === 'HasFaults';
+    // A summary alone is enough, so untouched empty rows shouldn't block the
+    // save with "required" errors — drop them (only when something remains).
+    if (hasFaults && !this.faultsMissing()) {
+      for (let i = c.faults.length - 1; i >= 0; i--) {
+        if (!c.faults.at(i).controls.description.value.trim()) c.faults.removeAt(i);
+      }
+    }
     const invalid =
       c.returnedAt.invalid ||
       c.result.invalid ||

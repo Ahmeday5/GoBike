@@ -1,46 +1,120 @@
-<div class="pgh mb-3">
-  <div>
-    <h1 class="pgt mb-0">حسابي</h1>
-    <div class="pgs">بيانات حسابك وتفضيلاتك</div>
-  </div>
-</div>
+<app-page-header title="حسابي" subtitle="بيانات حسابك وصلاحياتك وتفضيلات العرض" />
 
-<div class="row g-3">
-  <div class="col-lg-6">
-    <section class="card h-100">
-      <div class="chdr"><h2 class="ct mb-0">الحساب</h2></div>
-      <dl class="row mb-0">
-        <dt class="col-4 form-label">الاسم</dt>
-        <dd class="col-8">{{ user()?.name }}</dd>
-        <dt class="col-4 form-label">البريد الإلكتروني</dt>
-        <dd class="col-8 ltr text-start">{{ user()?.email }}</dd>
-        <dt class="col-4 form-label">الدور</dt>
-        <dd class="col-8 mb-0">{{ user()?.role }}</dd>
+@if (user(); as u) {
+  <section class="panel ac-hero" style="--i: 0">
+    <span class="ac-hero__avatar" aria-hidden="true">{{ initial() }}</span>
+    <div class="ac-hero__body">
+      <h2 class="ac-hero__name">{{ u.name }}</h2>
+      <span class="ac-hero__email ltr">{{ u.email }}</span>
+      <div class="ac-hero__chips">
+        @for (r of u.roles; track r) {
+          <app-enum-chip [map]="ROLE" [value]="r" />
+        } @empty {
+          <app-chip icon="minus-circle">بدون دور</app-chip>
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="ac-grid">
+    <section class="panel" style="--i: 1">
+      <div class="panel__head">
+        <h2 class="panel__title">
+          <app-icon name="user" [size]="18" />
+          الحساب
+        </h2>
+      </div>
+      <dl class="kv">
+        <div>
+          <dt>الاسم</dt>
+          <dd>{{ u.name || '—' }}</dd>
+        </div>
+        <div>
+          <dt>البريد الإلكتروني (اسم الدخول)</dt>
+          <dd class="ltr ac-start">{{ u.email || '—' }}</dd>
+        </div>
+        <div>
+          <dt>المكتب</dt>
+          <dd>
+            @if (u.hasGlobalScope) {
+              <app-chip tone="purple" icon="building" [small]="true">كل المكاتب</app-chip>
+            } @else if (officeName()) {
+              {{ officeName() }}
+            } @else if (u.officeId) {
+              <span class="muted">مكتب محدد</span>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>الصلاحيات</dt>
+          <dd>{{ u.permissions.length | num }} صلاحية</dd>
+        </div>
       </dl>
-    </section>
-  </div>
 
-  <div class="col-lg-6">
-    <section class="card h-100">
-      <div class="chdr"><h2 class="ct mb-0">المظهر</h2></div>
-      <fieldset>
-        <legend class="form-label">السمة</legend>
+      <div class="ac-note">
+        <app-icon name="lock" [size]="16" />
+        <p>
+          لا يمكن تغيير كلمة المرور من هنا. إن نسيتها أو أردت تغييرها، اطلب من مسئول النظام (صلاحية
+          إدارة المستخدمين) إعادة تعيينها من صفحة المستخدمين.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel" style="--i: 2">
+      <div class="panel__head">
+        <h2 class="panel__title">
+          <app-icon name="sun" [size]="18" />
+          المظهر
+        </h2>
+      </div>
+      <fieldset class="ac-theme">
+        <legend class="visually-hidden">السمة</legend>
         @for (opt of themeOptions; track opt.value) {
-          <div class="form-check">
+          <label class="ac-theme__opt" [class.ac-theme__opt--on]="theme.preference() === opt.value">
             <input
-              class="form-check-input"
+              class="ac-theme__input"
               type="radio"
               name="theme"
-              [id]="'theme-' + opt.value"
               [checked]="theme.preference() === opt.value"
               (change)="theme.setPreference(opt.value)"
             />
-            <label class="form-check-label" [for]="'theme-' + opt.value">{{ opt.label }}</label>
-          </div>
+            <app-icon [name]="opt.icon" [size]="20" />
+            <span>{{ opt.label }}</span>
+          </label>
         }
       </fieldset>
+      <p class="muted ac-version">
+        الإصدار <span class="ltr">{{ appVersion }}</span>
+      </p>
     </section>
   </div>
-</div>
 
-<p class="pgs mt-3">الإصدار {{ appVersion }}</p>
+  <section class="panel" style="--i: 3">
+    <details class="ac-perms">
+      <summary class="panel__title">
+        <app-icon name="shield" [size]="18" />
+        صلاحياتي ({{ u.permissions.length | num }})
+        <app-icon class="ac-perms__chev" name="chevron-down" [size]="16" />
+      </summary>
+      @if (areas().length) {
+        <div class="ac-perms__grid">
+          @for (a of areas(); track a.key) {
+            <div class="ac-perms__area">
+              <strong class="ltr">{{ a.key }}</strong>
+              <div class="ac-perms__chips">
+                @for (p of a.permissions; track p) {
+                  <code class="ac-perms__code ltr">{{ p }}</code>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted m-0">لا توجد صلاحيات على حسابك.</p>
+      }
+      <p class="form-hint">الصلاحيات تأتي من أدوارك ويحددها مسئول النظام من صفحة الأدوار.</p>
+    </details>
+  </section>
+}

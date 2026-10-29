@@ -15,7 +15,9 @@ export const APP_ROUTES = {
   driver: (id: string) => `/drivers/${id}`,
 
   rentals: '/rentals',
+  rental: (id: string) => `/rentals/${id}`,
   inspections: '/inspections',
+  inspection: (id: string) => `/inspections/${id}`,
 
   maintenance: '/maintenance',
   maintenanceRecord: (id: string) => `/maintenance/${id}`,

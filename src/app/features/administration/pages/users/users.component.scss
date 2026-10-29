@@ -1,0 +1,57 @@
+@use '../../styles/row-actions';
+
+.us-user {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-align: start;
+
+  &--off {
+    opacity: 0.65;
+  }
+}
+.us-user__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+}
+.us-user__text {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+
+  strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+}
+.us-user__email {
+  font-size: var(--fs-xs);
+  text-align: start;
+}
+
+.us-roles {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.us-sort {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+.us-sort__dir {
+  padding-inline: 0.625rem;
+}
+.us-sort__flip {
+  display: inline-flex;
+  transform: rotate(180deg);
+}

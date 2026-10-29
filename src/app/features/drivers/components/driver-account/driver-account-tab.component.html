@@ -1,0 +1,99 @@
+<section class="panel acc" style="--i: 0" aria-labelledby="acc-title">
+  <header class="panel__head">
+    <h2 class="panel__title" id="acc-title"><app-icon name="cash" [size]="18" />الرصيد</h2>
+    <div class="acc__actions no-print" *appHasPermission="P.DriverPayments.Manage">
+      <button type="button" class="btn btn-brand" (click)="paymentOpen.set(true)">
+        <app-icon name="plus" [size]="16" />
+        تسجيل دفعة
+      </button>
+      <button type="button" class="btn" (click)="chargeOpen.set(true)">
+        <app-icon name="edit" [size]="16" />
+        مديونية يدوية
+      </button>
+    </div>
+  </header>
+
+  @if (balanceRes.error(); as err) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ err.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="balanceRes.reload()">إعادة المحاولة</button>
+    </div>
+  } @else if (balanceRes.initialLoading()) {
+    <div class="acc__body" aria-busy="true">
+      <span class="skeleton acc__skeleton-hero"></span>
+      <div class="acc__figures">
+        @for (s of [0, 1, 2, 3]; track s) {
+          <span class="skeleton acc__skeleton-fig"></span>
+        }
+      </div>
+    </div>
+  } @else {
+    @if (balance(); as b) {
+      <div class="acc__body" [class.acc__body--busy]="balanceRes.loading()">
+        <div class="acc__hero" [class.acc__hero--debt]="b.outstanding > 0">
+          @if (b.outstanding > 0) {
+            <span class="acc__hero-label">
+              <app-icon name="alert" [size]="16" />
+              مديونية مستحقة على السائق
+            </span>
+            <span class="acc__hero-value amount amount--debt">{{ b.outstanding | money }}</span>
+            <span class="acc__hero-sub">
+              {{ b.openCharges }} {{ b.openCharges === 1 ? 'مديونية مفتوحة' : 'مديونيات مفتوحة' }}
+            </span>
+          } @else {
+            <span class="acc__hero-label">
+              <app-icon name="check-circle" [size]="16" />
+              لا توجد مديونية مستحقة
+            </span>
+            <span class="acc__hero-value amount">{{ 0 | money }}</span>
+          }
+        </div>
+
+        <dl class="acc__figures">
+          <div class="acc__fig" [class.acc__fig--credit]="b.credit > 0">
+            <dt>رصيد دائن للسائق</dt>
+            <dd class="amount" [class.amount--credit]="b.credit > 0">{{ b.credit | money }}</dd>
+            @if (b.credit > 0) {
+              <span class="acc__fig-note">يُخصم من المديونيات القادمة</span>
+            }
+          </div>
+          <div class="acc__fig">
+            <dt>إجمالي المديونيات</dt>
+            <dd class="amount">{{ b.totalCharged | money }}</dd>
+          </div>
+          <div class="acc__fig">
+            <dt>إجمالي المدفوع</dt>
+            <dd class="amount">{{ b.totalPaid | money }}</dd>
+          </div>
+          <div class="acc__fig">
+            <dt>مديونيات مفتوحة</dt>
+            <dd>{{ b.openCharges }}</dd>
+          </div>
+        </dl>
+      </div>
+    }
+  }
+</section>
+
+<app-driver-statement [driverId]="driverId()" [driverName]="driverName()" [version]="version()" />
+
+<div class="no-print">
+  <app-driver-charges [driverId]="driverId()" [version]="version()" (changed)="refresh()" />
+  <app-driver-payments [driverId]="driverId()" [version]="version()" (changed)="refresh()" />
+</div>
+
+<app-record-payment-dialog
+  [open]="paymentOpen()"
+  [driverId]="driverId()"
+  [driverName]="driverName()"
+  [outstanding]="outstanding()"
+  (recorded)="refresh()"
+  (closed)="paymentOpen.set(false)"
+/>
+<app-manual-charge-dialog
+  [open]="chargeOpen()"
+  [driverId]="driverId()"
+  [driverName]="driverName()"
+  (added)="onChargeAdded()"
+  (closed)="chargeOpen.set(false)"
+/>

@@ -1,0 +1,147 @@
+<app-modal
+  [open]="open()"
+  [title]="isEdit() ? 'تعديل سجل الصيانة' : 'سجل صيانة جديد'"
+  size="lg"
+  (closed)="closed.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <h3 class="form-section-title">الموتوسيكل ونوع الصيانة</h3>
+
+      <div>
+        <label class="form-label" for="mr-moto">الموتوسيكل *</label>
+        <app-remote-picker
+          inputId="mr-moto"
+          formControlName="motorcycleId"
+          icon="bike"
+          placeholder="اختر الموتوسيكل"
+          searchPlaceholder="ابحث برقم اللوحة أو الماركة…"
+          [search]="searchMotorcycles"
+          [initial]="motorcycleOption()"
+          [invalid]="form.controls.motorcycleId.invalid && form.controls.motorcycleId.touched"
+        />
+        <app-form-error [control]="form.controls.motorcycleId" label="الموتوسيكل" />
+      </div>
+      <div>
+        <label class="form-label" for="mr-type">نوع الصيانة *</label>
+        <select id="mr-type" class="form-select" formControlName="type">
+          @for (o of typeOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+        <app-form-error [control]="form.controls.type" label="نوع الصيانة" />
+      </div>
+
+      <div>
+        <label class="form-label" for="mr-at">الموعد</label>
+        <input
+          id="mr-at"
+          type="datetime-local"
+          class="form-control"
+          formControlName="scheduledAt"
+        />
+        <div class="form-hint">بتوقيت القاهرة. اتركه فارغًا إن لم يُحدَّد.</div>
+        <app-form-error [control]="form.controls.scheduledAt" label="الموعد" />
+      </div>
+      @if (isPeriodic()) {
+        <div class="d-flex align-items-center">
+          <label class="form-check mb-0" for="mr-reset">
+            <input
+              id="mr-reset"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="resetsMaintenanceCycle"
+            />
+            <span class="form-check-label">تُصفِّر عدّاد تغيير الزيت عند الإكمال</span>
+          </label>
+        </div>
+      } @else {
+        <div></div>
+      }
+
+      <div class="span-2">
+        <label class="form-label" for="mr-issue">وصف المشكلة / المطلوب</label>
+        <textarea
+          id="mr-issue"
+          class="form-control"
+          rows="2"
+          formControlName="issueDescription"
+          placeholder="مثال: صيانة دورية — تغيير زيت وفلتر وفحص الفرامل"
+        ></textarea>
+        <app-form-error [control]="form.controls.issueDescription" label="وصف المشكلة" />
+      </div>
+
+      @if (isEdit()) {
+        <div class="span-2">
+          <label class="form-label" for="mr-work">الأعمال المنفذة</label>
+          <textarea
+            id="mr-work"
+            class="form-control"
+            rows="2"
+            formControlName="workPerformed"
+          ></textarea>
+          <app-form-error [control]="form.controls.workPerformed" label="الأعمال المنفذة" />
+        </div>
+      }
+
+      <h3 class="form-section-title">الورشة والتكلفة</h3>
+
+      <div>
+        <label class="form-label" for="mr-workshop">الورشة</label>
+        <input id="mr-workshop" class="form-control" formControlName="workshop" />
+        <app-form-error [control]="form.controls.workshop" label="الورشة" />
+      </div>
+      <div>
+        <label class="form-label" for="mr-tech">الفني</label>
+        <input id="mr-tech" class="form-control" formControlName="technician" />
+        <app-form-error [control]="form.controls.technician" label="الفني" />
+      </div>
+      <div>
+        <label class="form-label" for="mr-labor">تكلفة المصنعية (ج.م)</label>
+        <input
+          id="mr-labor"
+          type="number"
+          class="form-control"
+          formControlName="laborCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.laborCost" label="تكلفة المصنعية" />
+      </div>
+      <div>
+        <label class="form-label" for="mr-other">تكاليف أخرى (ج.م)</label>
+        <input
+          id="mr-other"
+          type="number"
+          class="form-control"
+          formControlName="otherCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.otherCost" label="تكاليف أخرى" />
+      </div>
+      @if (costTotal() > 0) {
+        <div class="span-2 form-hint">
+          إجمالي المصنعية والتكاليف الأخرى:
+          <span class="amount">{{ costTotal() | money }}</span> (تُضاف إليها قطع الغيار إن وُجدت).
+        </div>
+      }
+
+      <div class="span-2">
+        <label class="form-label" for="mr-notes">ملاحظات</label>
+        <textarea id="mr-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+        <app-form-error [control]="form.controls.notes" label="الملاحظات" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+      <button type="submit" class="btn btn-brand" [disabled]="saving()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        {{ isEdit() ? 'حفظ التعديلات' : 'إنشاء السجل' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

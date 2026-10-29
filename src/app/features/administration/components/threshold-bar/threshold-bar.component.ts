@@ -59,7 +59,11 @@ const num = (v: number | null | undefined): number => (typeof v === 'number' && 
           ></span>
         }
         @for (m of markers(); track m.key) {
-          <span class="tb__tick" [style.inset-inline-start.%]="m.at" [attr.data-tone]="m.tone"></span>
+          <span
+            class="tb__tick"
+            [style.inset-inline-start.%]="m.at"
+            [attr.data-tone]="m.tone"
+          ></span>
         }
       </div>
       <div class="tb__labels">

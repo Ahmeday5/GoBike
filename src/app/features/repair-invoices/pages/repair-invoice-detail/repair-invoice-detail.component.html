@@ -1,0 +1,325 @@
+@if (notFound()) {
+  <app-page-header title="فاتورة الإصلاح" [backLink]="ROUTES.repairInvoices" />
+  <section class="panel">
+    <app-empty-state
+      icon="cash"
+      title="الفاتورة غير موجودة"
+      text="ربما حُذفت أو تخص مكتبًا آخر لا تملك صلاحية عليه."
+    />
+  </section>
+} @else {
+  <app-page-header
+    [title]="
+      invoice()?.externalInvoiceNumber
+        ? 'فاتورة إصلاح ' + invoice()?.externalInvoiceNumber
+        : 'فاتورة الإصلاح'
+    "
+    [subtitle]="invoice()?.plateNumber ? 'الموتوسيكل ' + invoice()?.plateNumber : ''"
+    [backLink]="ROUTES.repairInvoices"
+  />
+
+  @if (invoiceRes.error(); as err) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ err.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="invoiceRes.reload()">إعادة المحاولة</button>
+    </div>
+  }
+
+  @if (!invoice()) {
+    @if (!invoiceRes.error()) {
+      <div class="ri" aria-busy="true">
+        <div class="ri__main">
+          <span class="skeleton" style="height: 10rem"></span>
+          <span class="skeleton" style="height: 12rem"></span>
+        </div>
+        <div class="ri__side"><span class="skeleton" style="height: 16rem"></span></div>
+      </div>
+    }
+  } @else {
+    @let i = invoice()!;
+    <div class="ri" [class.ri--refreshing]="invoiceRes.loading()">
+      <div class="ri__main">
+        <section class="panel ri__head" style="--i: 0">
+          <div class="ri__amount-row">
+            <div>
+              <span class="ri__label">مبلغ الفاتورة</span>
+              <strong class="amount ri__amount">{{ i.amount | money }}</strong>
+            </div>
+            <app-enum-chip [map]="STATUS" [value]="i.status" />
+          </div>
+          <dl class="kv">
+            <div>
+              <dt>رقم الفاتورة</dt>
+              <dd class="ltr">{{ i.externalInvoiceNumber || '—' }}</dd>
+            </div>
+            <div>
+              <dt>تاريخ الإصدار</dt>
+              <dd>{{ i.issuedAtUtc | cairoDate: 'date' }}</dd>
+            </div>
+            @if (i.vendorName) {
+              <div>
+                <dt>الجهة</dt>
+                <dd>{{ i.vendorName }}</dd>
+              </div>
+            }
+            <div>
+              <dt>الموتوسيكل</dt>
+              <dd>
+                @if (i.motorcycleId) {
+                  <a class="ltr" [routerLink]="ROUTES.motorcycle(i.motorcycleId)">{{
+                    i.plateNumber ?? 'عرض'
+                  }}</a>
+                } @else {
+                  <span class="ltr">{{ i.plateNumber ?? '—' }}</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>سجل الإصلاح</dt>
+              <dd>
+                @if (i.maintenanceRecordId) {
+                  <a [routerLink]="ROUTES.maintenanceRecord(i.maintenanceRecordId)">
+                    <app-icon name="wrench" [size]="14" /> فتح سجل الإصلاح
+                  </a>
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>السائق المقترح</dt>
+              <dd>
+                @if (i.suggestedDriverId) {
+                  <a [routerLink]="ROUTES.driver(i.suggestedDriverId)">{{
+                    i.suggestedDriverName ?? 'عرض السائق'
+                  }}</a>
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+            @if (i.officeName) {
+              <div>
+                <dt>المكتب</dt>
+                <dd>{{ i.officeName }}</dd>
+              </div>
+            }
+          </dl>
+          @if (i.suggestedDriverId) {
+            <p class="form-hint ri__why">
+              السائق المقترح هو من سلّم الموتوسيكل بالأعطال التي أصلحتها هذه الفاتورة.
+            </p>
+          }
+          @if (i.notes) {
+            <p class="ri__notes"><strong>ملاحظات:</strong> {{ i.notes }}</p>
+          }
+        </section>
+
+        <section class="panel" style="--i: 1">
+          <div class="panel__head">
+            <h2 class="panel__title"><app-icon name="file" [size]="18" /> بنود الفاتورة</h2>
+          </div>
+          @if (lines().length) {
+            <div class="tw ri__lines">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">البند</th>
+                    <th scope="col">الكمية</th>
+                    <th scope="col">سعر الوحدة</th>
+                    <th scope="col">الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of lines(); track $index) {
+                    <tr>
+                      <td class="ri__desc">{{ l.description }}</td>
+                      <td class="ltr">{{ l.quantity | num: true }}</td>
+                      <td>
+                        <span class="amount">{{ l.unitPrice | money }}</span>
+                      </td>
+                      <td>
+                        <span class="amount">{{ l.total | money }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th scope="row" colspan="3" class="ri__foot-label">إجمالي الفاتورة</th>
+                    <td>
+                      <span class="amount">{{ i.amount | money }}</span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            @if (linesTotal() && linesTotal() !== i.amount) {
+              <p class="form-hint">
+                مجموع البنود {{ linesTotal() | money }} — المعتمد هو إجمالي الفاتورة.
+              </p>
+            }
+          } @else {
+            <p class="muted ri__empty">لا توجد بنود تفصيلية لهذه الفاتورة.</p>
+          }
+        </section>
+      </div>
+
+      <aside class="ri__side">
+        @if (canDecide()) {
+          <section class="panel ri__decision" style="--i: 2">
+            <div class="panel__head">
+              <h2 class="panel__title"><app-icon name="shield" [size]="18" /> من يدفع؟</h2>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+              <fieldset class="ri__payers" role="radiogroup" aria-label="من يتحمل الفاتورة">
+                <legend class="visually-hidden">من يتحمل الفاتورة</legend>
+                <label class="ri__payer" [class.ri__payer--active]="paidBy() === 'Driver'">
+                  <input
+                    type="radio"
+                    class="visually-hidden"
+                    name="ri-payer"
+                    value="Driver"
+                    [checked]="paidBy() === 'Driver'"
+                    (change)="setPaidBy('Driver')"
+                  />
+                  <app-icon name="user" [size]="22" />
+                  <span class="ri__payer-title">السائق</span>
+                  <span class="ri__payer-sub">تُسجَّل مديونية عليه</span>
+                </label>
+                <label class="ri__payer" [class.ri__payer--active]="paidBy() === 'Company'">
+                  <input
+                    type="radio"
+                    class="visually-hidden"
+                    name="ri-payer"
+                    value="Company"
+                    [checked]="paidBy() === 'Company'"
+                    (change)="setPaidBy('Company')"
+                  />
+                  <app-icon name="building" [size]="22" />
+                  <span class="ri__payer-title">الشركة</span>
+                  <span class="ri__payer-sub">مصروف على الشركة</span>
+                </label>
+              </fieldset>
+              @if (submitted() && form.controls.paidBy.invalid) {
+                <div class="invalid-feedback d-block">اختر من يتحمل الفاتورة</div>
+              }
+
+              @if (paidBy() === 'Driver') {
+                <div class="ri__field anim-fade-up">
+                  <label class="form-label" for="ri-driver">السائق *</label>
+                  <app-remote-picker
+                    inputId="ri-driver"
+                    formControlName="driverId"
+                    icon="user"
+                    placeholder="اختر السائق"
+                    searchPlaceholder="ابحث بالاسم أو رقم الهاتف…"
+                    [search]="searchDrivers"
+                    [initial]="suggestedOption()"
+                    [invalid]="form.controls.driverId.invalid && form.controls.driverId.touched"
+                    (picked)="onDriverPicked($event)"
+                  />
+                  @if (
+                    form.controls.driverId.value &&
+                    form.controls.driverId.value === invoice()?.suggestedDriverId
+                  ) {
+                    <div class="form-hint">السائق المقترح — يمكنك اختيار سائق آخر.</div>
+                  }
+                  <app-form-error [control]="form.controls.driverId" label="السائق" />
+                </div>
+              }
+
+              @if (paidBy()) {
+                <div
+                  class="ri__effect anim-fade-up"
+                  [class.ri__effect--driver]="paidBy() === 'Driver'"
+                  role="note"
+                >
+                  <app-icon name="info" [size]="16" />
+                  @if (paidBy() === 'Driver') {
+                    <span>
+                      سيُسجَّل <strong class="amount">{{ i.amount | money }}</strong> مديونيةً على
+                      <strong>{{ driverOption()?.label ?? 'السائق المختار' }}</strong
+                      >.
+                    </span>
+                  } @else {
+                    <span>
+                      سيُسجَّل <strong class="amount">{{ i.amount | money }}</strong> مصروفًا على
+                      الشركة.
+                    </span>
+                  }
+                </div>
+              }
+
+              <div class="ri__field">
+                <label class="form-label" for="ri-notes">ملاحظات</label>
+                <textarea
+                  id="ri-notes"
+                  class="form-control"
+                  rows="2"
+                  formControlName="notes"
+                ></textarea>
+                <app-form-error [control]="form.controls.notes" label="الملاحظات" />
+              </div>
+
+              <button type="submit" class="btn btn-brand btn-lg ri__submit" [disabled]="saving()">
+                @if (saving()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                }
+                تأكيد القرار
+              </button>
+            </form>
+          </section>
+        } @else if (isPending()) {
+          <section class="panel" style="--i: 2">
+            <div class="panel__head">
+              <h2 class="panel__title"><app-icon name="clock" [size]="18" /> بانتظار القرار</h2>
+            </div>
+            <p class="muted ri__empty">لم يُحدَّد بعد من يتحمل هذه الفاتورة.</p>
+          </section>
+        } @else {
+          <section class="panel" style="--i: 2">
+            <div class="panel__head">
+              <h2 class="panel__title"><app-icon name="check-circle" [size]="18" /> القرار</h2>
+            </div>
+            <div class="ri__decided">
+              <app-enum-chip [map]="STATUS" [value]="i.status" />
+              @if (i.paidBy) {
+                <app-chip tone="neutral" [icon]="PAYER[i.paidBy].icon"
+                  >يتحملها: {{ PAYER[i.paidBy].label }}</app-chip
+                >
+              }
+            </div>
+            <dl class="kv ri__decided-kv">
+              @if (chargedDriver(); as d) {
+                <div>
+                  <dt>السائق المُحمَّل</dt>
+                  <dd>
+                    <a [routerLink]="ROUTES.driver(d.id)" [queryParams]="{ tab: 'account' }">{{
+                      d.name ?? 'عرض حساب السائق'
+                    }}</a>
+                  </dd>
+                </div>
+              }
+              @if (i.decidedByName) {
+                <div>
+                  <dt>بواسطة</dt>
+                  <dd>{{ i.decidedByName }}</dd>
+                </div>
+              }
+              @if (i.decidedAtUtc) {
+                <div>
+                  <dt>وقت القرار</dt>
+                  <dd>{{ i.decidedAtUtc | cairoDate }}</dd>
+                </div>
+              }
+            </dl>
+            @if (i.decisionNotes) {
+              <p class="ri__notes"><strong>ملاحظات:</strong> {{ i.decisionNotes }}</p>
+            }
+          </section>
+        }
+      </aside>
+    </div>
+  }
+}

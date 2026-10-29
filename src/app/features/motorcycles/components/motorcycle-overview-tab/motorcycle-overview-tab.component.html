@@ -1,0 +1,446 @@
+@let o = overview();
+<div class="ov-grid">
+  <!-- ── Location + map ── -->
+  <section class="panel ov-wide" style="--i: 0">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="map-pin" [size]="18" />الموقع الحالي</h2>
+      @if (loc(); as l) {
+        <div class="ov-chips">
+          @if (l.connectivity) {
+            <app-enum-chip [map]="CONNECTIVITY" [value]="l.connectivity" [small]="true" />
+          }
+          @if (l.isStale) {
+            <app-chip tone="warning" icon="clock" [small]="true">الموقع قديم</app-chip>
+          }
+        </div>
+      }
+    </header>
+
+    @if (loc(); as l) {
+      @if (l.isStale) {
+        <p class="ov-warn">
+          <app-icon name="alert" [size]="14" />
+          لم تصل إشارة حديثة من جهاز التتبع منذ
+          {{ lastSeen() ? (lastSeen() | cairoDate: 'relative') : 'فترة' }} — الموقع المعروض هو آخر
+          موقع معروف.
+        </p>
+      }
+      <div class="ov-loc">
+        <div class="ov-loc__map">
+          @if (hasFix()) {
+            <app-motorcycle-mini-map [position]="position()" [zoneCircle]="zone()" />
+          } @else {
+            <app-empty-state
+              icon="map-pin"
+              title="لا يوجد موقع بعد"
+              text="جهاز التتبع مركّب لكنه لم يرسل موقعًا صالحًا."
+            />
+          }
+        </div>
+        <dl class="kv ov-loc__kv">
+          <div>
+            <dt>السرعة</dt>
+            <dd>
+              <span class="ltr">{{ l.speedKmh | num }}</span> كم/س
+            </dd>
+          </div>
+          <div>
+            <dt>البطارية</dt>
+            <dd>
+              @if (battery() !== null) {
+                <span class="ltr">{{ battery() | num }}%</span>
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>جهد الكهرباء الخارجية</dt>
+            <dd>
+              @if (volts() !== null) {
+                <span class="ltr" [class.text-danger]="volts()! < 1"
+                  >{{ volts() | num: true }} V</span
+                >
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>العداد</dt>
+            <dd>{{ l.odometerKm | km }}</dd>
+          </div>
+          <div>
+            <dt>آخر إشارة</dt>
+            <dd [title]="lastSeen() | cairoDate">{{ lastSeen() | cairoDate: 'relative' }}</dd>
+          </div>
+          <div>
+            <dt>الإحداثيات</dt>
+            <dd class="ltr">
+              @if (hasFix()) {
+                {{ l.latitude!.toFixed(5) }}, {{ l.longitude!.toFixed(5) }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+        </dl>
+      </div>
+    } @else {
+      @if (zone(); as z) {
+        <div class="ov-loc__map ov-loc__map--solo">
+          <app-motorcycle-mini-map [position]="null" [zoneCircle]="z" />
+        </div>
+      }
+      <app-empty-state
+        icon="wifi-off"
+        title="لا يوجد جهاز تتبع"
+        text="هذا الموتوسيكل غير مربوط بجهاز تتبع، فلا يظهر على الخريطة ولا تُسجل له مسارات."
+      />
+    }
+  </section>
+
+  <!-- ── Current rental ── -->
+  <section class="panel" style="--i: 1">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="route" [size]="18" />الإيجار الحالي</h2>
+      @if (rentalId(); as rid) {
+        <a class="link-btn" [routerLink]="R.rental(rid)">تفاصيل الإيجار</a>
+      }
+    </header>
+    @if (rental(); as r) {
+      <dl class="kv">
+        <div>
+          <dt>السائق</dt>
+          <dd>
+            @if (r.driverId) {
+              <a class="link-btn" [routerLink]="R.driver(r.driverId)">{{ r.driverName ?? '—' }}</a>
+            } @else {
+              {{ r.driverName ?? '—' }}
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>الهاتف</dt>
+          <dd>
+            @if (r.driverPhone) {
+              <a class="ltr" [href]="'tel:' + r.driverPhone">{{ r.driverPhone }}</a>
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>بداية الإيجار</dt>
+          <dd>{{ r.startAtUtc | cairoDate }}</dd>
+        </div>
+        <div>
+          <dt>مديونية السائق</dt>
+          <dd>
+            <span class="amount" [class.amount--debt]="(r.driverOutstanding ?? 0) > 0">
+              {{ r.driverOutstanding | money }}
+            </span>
+          </dd>
+        </div>
+      </dl>
+    } @else {
+      <app-empty-state icon="route" title="غير مؤجر حاليًا" />
+    }
+  </section>
+
+  <!-- ── Oil ── -->
+  <section class="panel" style="--i: 2">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="droplet" [size]="18" />تغيير الزيت</h2>
+      @if (o.lastOilChangeAtUtc) {
+        <span class="muted ov-small"
+          >آخر تغيير: {{ o.lastOilChangeAtUtc | cairoDate: 'date' }}</span
+        >
+      }
+    </header>
+    @if (oil(); as oil) {
+      <app-oil-status-bar [cycle]="oil" />
+      <dl class="kv ov-oil-kv">
+        @if ((oil.overdueKm ?? 0) > 0) {
+          <div>
+            <dt>تجاوز الحد بـ</dt>
+            <dd class="text-danger">{{ oil.overdueKm | km }}</dd>
+          </div>
+          <div>
+            <dt>الغرامة التقديرية</dt>
+            <dd>
+              <span class="amount amount--debt">{{ oil.estimatedFine | money }}</span>
+              @if (oil.finePerKm) {
+                <small class="muted d-block">{{ oil.finePerKm | money }} لكل كم</small>
+              }
+            </dd>
+          </div>
+        } @else {
+          <div>
+            <dt>المتبقي حتى الحد الأقصى</dt>
+            <dd>{{ oil.remainingToMaxKm | km }}</dd>
+          </div>
+          <div>
+            <dt>غرامة كل كم بعد الحد</dt>
+            <dd>{{ oil.finePerKm | money }}</dd>
+          </div>
+        }
+        <div>
+          <dt>آخر فيديو مرفوع</dt>
+          <dd>
+            @if (oil.latestSubmission; as s) {
+              <app-enum-chip [map]="OIL_SUBMISSION" [value]="s.status" [small]="true" />
+              @if (s.status === 'Pending' && s.id) {
+                <a
+                  *appHasPermission="P.Maintenance.OilReview"
+                  class="link-btn ov-small d-block mt-1"
+                  [routerLink]="R.oilChange(s.id)"
+                >
+                  مراجعة الفيديو
+                </a>
+              }
+            } @else {
+              <span class="muted">لا يوجد</span>
+            }
+          </dd>
+        </div>
+      </dl>
+    } @else {
+      <app-empty-state
+        icon="droplet"
+        title="لا توجد بيانات زيت"
+        text="لم تُحدد سياسة صيانة أو لا توجد قراءة عداد بعد."
+      />
+    }
+  </section>
+
+  <!-- ── Open alerts & incidents ── -->
+  <section class="panel" style="--i: 3">
+    <header class="panel__head">
+      <h2 class="panel__title">
+        <app-icon name="bell" [size]="18" />التنبيهات المفتوحة
+        @if (alerts().length + incidents().length > 0) {
+          <span class="ov-count">{{ alerts().length + incidents().length }}</span>
+        }
+      </h2>
+      <a class="link-btn ov-small" [routerLink]="R.alerts" [queryParams]="{ tab: 'oil' }">
+        مركز التنبيهات
+      </a>
+    </header>
+    @if (alerts().length === 0 && incidents().length === 0) {
+      <app-empty-state icon="check-circle" title="لا توجد تنبيهات مفتوحة" />
+    } @else {
+      <ul class="ov-list">
+        @for (a of alerts(); track a.id) {
+          <li>
+            <app-enum-chip [map]="ALERT_LEVEL" [value]="a.level" [small]="true" />
+            <span class="ov-list__text">
+              {{ a.message || 'تنبيه تغيير زيت' }}
+              @if ((a.kmAtAlert ?? null) !== null) {
+                <span class="muted">({{ a.kmAtAlert | km }})</span>
+              }
+            </span>
+            <a
+              class="link-btn ov-small"
+              [routerLink]="R.alerts"
+              [queryParams]="{ tab: 'oil' }"
+              [title]="a.createdAtUtc | cairoDate"
+            >
+              {{ a.createdAtUtc | cairoDate: 'relative' }}
+            </a>
+          </li>
+        }
+        @for (i of incidents(); track i.id) {
+          <li>
+            <app-enum-chip [map]="INCIDENT_TYPE" [value]="i.type" [small]="true" />
+            <span class="ov-list__text">
+              {{ i.message || i.description || '' }}
+              @if (i.status && i.status !== 'Open') {
+                <app-enum-chip [map]="INCIDENT_STATUS" [value]="i.status" [small]="true" />
+              }
+            </span>
+            <a class="link-btn ov-small" [routerLink]="R.incident(i.id)">
+              {{ i.startedAtUtc ?? i.createdAtUtc | cairoDate: 'relative' }}
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- ── Zone ── -->
+  <section class="panel" style="--i: 4">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="target" [size]="18" />النطاق الجغرافي</h2>
+      <a
+        *appHasPermission="P.Motorcycles.Zone"
+        class="link-btn ov-small"
+        [routerLink]="R.motorcycleZone(m().id)"
+      >
+        {{ zone() ? 'تعديل النطاق' : 'تحديد نطاق' }}
+      </a>
+    </header>
+    @if (zone(); as z) {
+      <div class="ov-chips mb-2">
+        @if (z.isActive === false) {
+          <app-chip tone="neutral" icon="pause" [small]="true">النطاق متوقف</app-chip>
+        } @else if (z.isOutside) {
+          <app-chip tone="danger" icon="alert" [small]="true">خارج النطاق</app-chip>
+        } @else if (z.isOutside === false) {
+          <app-chip tone="success" icon="check-circle" [small]="true">داخل النطاق</app-chip>
+        }
+      </div>
+      <dl class="kv">
+        <div>
+          <dt>الاسم</dt>
+          <dd>{{ z.name || '—' }}</dd>
+        </div>
+        <div>
+          <dt>نصف القطر</dt>
+          <dd>{{ zoneRadius() }}</dd>
+        </div>
+        @if ((z.distanceFromCenterMeters ?? null) !== null) {
+          <div>
+            <dt>البعد عن المركز</dt>
+            <dd>{{ zoneDistance() }}</dd>
+          </div>
+        }
+      </dl>
+    } @else {
+      <app-empty-state icon="target" title="لا يوجد نطاق" text="لن تصدر تنبيهات خروج من النطاق." />
+    }
+  </section>
+
+  <!-- ── Last inspection ── -->
+  <section class="panel" style="--i: 5">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="search" [size]="18" />آخر فحص استلام</h2>
+      @if (o.lastInspection?.id; as iid) {
+        <a class="link-btn ov-small" [routerLink]="R.inspection(iid)">عرض الفحص</a>
+      }
+    </header>
+    @if (o.lastInspection; as ins) {
+      <dl class="kv">
+        <div>
+          <dt>النتيجة</dt>
+          <dd><app-enum-chip [map]="INSPECTION" [value]="ins.result" [small]="true" /></dd>
+        </div>
+        <div>
+          <dt>التاريخ</dt>
+          <dd>{{ ins.inspectedAtUtc | cairoDate }}</dd>
+        </div>
+        <div>
+          <dt>السائق</dt>
+          <dd>{{ ins.driverName || '—' }}</dd>
+        </div>
+        @if (ins.faultCount) {
+          <div>
+            <dt>الأعطال</dt>
+            <dd>{{ ins.faultCount }}</dd>
+          </div>
+        }
+        @if (ins.faultSummary) {
+          <div class="ov-span">
+            <dt>ملخص الأعطال</dt>
+            <dd>{{ ins.faultSummary }}</dd>
+          </div>
+        }
+      </dl>
+    } @else {
+      <app-empty-state icon="search" title="لا يوجد فحص مسجّل" />
+    }
+  </section>
+
+  <!-- ── Open repair ── -->
+  <section class="panel" style="--i: 6">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="wrench" [size]="18" />الإصلاح المفتوح</h2>
+      @if (o.openRepair?.maintenanceRecordId; as rid) {
+        <a class="link-btn ov-small" [routerLink]="R.maintenanceRecord(rid)">فتح سجل الإصلاح</a>
+      }
+    </header>
+    @if (o.openRepair; as rep) {
+      <dl class="kv">
+        <div>
+          <dt>الحالة</dt>
+          <dd><app-enum-chip [map]="MAINT_STATUS" [value]="rep.status" [small]="true" /></dd>
+        </div>
+        <div>
+          <dt>الأعطال</dt>
+          <dd>{{ rep.faultCount ?? 0 }}</dd>
+        </div>
+        <div>
+          <dt>قطع الغيار</dt>
+          <dd>{{ rep.partCount ?? 0 }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <app-empty-state icon="check-circle" title="لا يوجد إصلاح مفتوح" />
+    }
+  </section>
+
+  <!-- ── Motorcycle data ── -->
+  <section class="panel ov-wide" style="--i: 7">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="bike" [size]="18" />بيانات الموتوسيكل</h2>
+    </header>
+    <dl class="kv">
+      <div>
+        <dt>رقم اللوحة</dt>
+        <dd class="ltr">{{ m().plateNumber }}</dd>
+      </div>
+      <div>
+        <dt>الكود الداخلي</dt>
+        <dd>{{ m().internalCode || '—' }}</dd>
+      </div>
+      <div>
+        <dt>الماركة / الموديل</dt>
+        <dd>{{ m().brand }} {{ m().model }}</dd>
+      </div>
+      <div>
+        <dt>سنة الصنع</dt>
+        <dd>{{ m().manufacturingYear ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>اللون</dt>
+        <dd>{{ m().color || '—' }}</dd>
+      </div>
+      <div>
+        <dt>رقم الشاسيه</dt>
+        <dd class="ltr">{{ m().chassisNumber || '—' }}</dd>
+      </div>
+      <div>
+        <dt>رقم الموتور</dt>
+        <dd class="ltr">{{ m().engineNumber || '—' }}</dd>
+      </div>
+      <div>
+        <dt>المكتب</dt>
+        <dd>{{ m().officeName ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>المشرف</dt>
+        <dd>{{ m().supervisorName || '—' }}</dd>
+      </div>
+      <div>
+        <dt>تاريخ الشراء</dt>
+        <dd>{{ m().purchaseDate | cairoDate: 'date' }}</dd>
+      </div>
+      <div>
+        <dt>سعر الشراء</dt>
+        <dd class="amount">{{ m().purchasePrice | money }}</dd>
+      </div>
+      <div>
+        <dt>تكلفة التجهيز + المعدات</dt>
+        <dd class="amount">
+          {{ (m().preparationCost ?? 0) + (m().equipmentCost ?? 0) | money }}
+        </dd>
+      </div>
+      @if (m().notes) {
+        <div class="ov-span">
+          <dt>ملاحظات</dt>
+          <dd>{{ m().notes }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+</div>

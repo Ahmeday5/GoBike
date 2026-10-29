@@ -12,8 +12,8 @@
       @if (o.result === 'HasFaults') {
         <h3 class="rr-done__title">الموتوسيكل الآن في الحالة الحمراء</h3>
         <p class="rr-done__text">
-          تم إنهاء الإيجار وفتح سجل إصلاح في طابور الفني. ستعود الموتوسيكل خضراء بعد أن يُنهي
-          الفني الإصلاح ويعتمده المشرف.
+          تم إنهاء الإيجار وفتح سجل إصلاح في طابور الفني. ستعود الموتوسيكل خضراء بعد أن يُنهي الفني
+          الإصلاح ويعتمده المشرف.
         </p>
       } @else {
         <h3 class="rr-done__title">الموتوسيكل سليمة ومتاحة للتأجير</h3>
@@ -39,7 +39,10 @@
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       @if (rental(); as r) {
         <div class="rr-head">
-          <span><app-icon name="bike" [size]="16" /> <strong class="ltr">{{ r.plateNumber ?? '—' }}</strong></span>
+          <span
+            ><app-icon name="bike" [size]="16" />
+            <strong class="ltr">{{ r.plateNumber ?? '—' }}</strong></span
+          >
           <span><app-icon name="user" [size]="16" /> {{ r.driverName ?? '—' }}</span>
         </div>
       }
@@ -135,7 +138,12 @@
       <div class="form-grid mt-3">
         <div>
           <label class="form-label" for="rr-at">وقت الاستلام *</label>
-          <input id="rr-at" type="datetime-local" class="form-control" formControlName="returnedAt" />
+          <input
+            id="rr-at"
+            type="datetime-local"
+            class="form-control"
+            formControlName="returnedAt"
+          />
           <div class="form-hint">بتوقيت القاهرة.</div>
           <app-form-error [control]="form.controls.returnedAt" label="وقت الاستلام" />
         </div>

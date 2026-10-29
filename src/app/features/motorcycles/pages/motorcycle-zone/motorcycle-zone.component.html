@@ -1,0 +1,204 @@
+<app-page-header
+  [title]="plate() ? 'نطاق الموتوسيكل ' + plate() : 'نطاق الموتوسيكل'"
+  subtitle="دائرة جغرافية يصدر تنبيه عند خروج الموتوسيكل منها"
+  [backLink]="backLink()"
+/>
+
+<div class="zn-note" role="note">
+  <app-icon name="info" [size]="16" />
+  <span>
+    يُعتبر الموتوسيكل خارج النطاق بعد قراءتين متتاليتين من جهاز التتبع على بعد أكثر من 50 م خارج
+    الدائرة، لذلك قد يستغرق التنبيه حتى ~10 دقائق. ويُغلق التنبيه تلقائيًا عند العودة.
+  </span>
+</div>
+
+@if (zoneRes.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="zoneRes.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<div class="zn-layout">
+  <section class="panel zn-map-panel">
+    <div class="zn-map">
+      <app-map-view class="zn-map__view" [zoom]="12" (ready)="onMap($event)" />
+      @if (zoneRes.initialLoading()) {
+        <div class="zn-map__overlay skeleton" aria-hidden="true"></div>
+      }
+      @if (!center() && !zoneRes.initialLoading()) {
+        <div class="zn-map__hint">
+          <app-icon name="map-pin" [size]="16" />
+          اضغط على الخريطة لتحديد مركز النطاق
+        </div>
+      }
+    </div>
+    <ul class="zn-legend">
+      <li><span class="zn-legend__dot"></span>مركز النطاق (اسحبه للتحريك)</li>
+      <li><span class="zn-legend__dot zn-legend__dot--handle"></span>اسحب لتغيير نصف القطر</li>
+      @if (bike(); as b) {
+        <li>
+          <span class="zn-legend__dot zn-legend__dot--bike"></span>
+          موقع الموتوسيكل ({{ b.at | cairoDate: 'relative' }})
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="panel zn-form">
+    <header class="panel__head">
+      <h2 class="panel__title"><app-icon name="target" [size]="18" />إعدادات النطاق</h2>
+      @if (existing()) {
+        <app-chip tone="info" icon="check" [small]="true">محفوظ</app-chip>
+      } @else if (!zoneRes.initialLoading()) {
+        <app-chip tone="neutral" icon="plus" [small]="true">نطاق جديد</app-chip>
+      }
+    </header>
+
+    @if (zoneRes.initialLoading()) {
+      <div class="zn-skel">
+        <span class="skeleton"></span>
+        <span class="skeleton"></span>
+        <span class="skeleton"></span>
+      </div>
+    } @else {
+      <div class="zn-fields">
+        <div>
+          <label class="form-label" for="zn-name">اسم النطاق</label>
+          <input
+            id="zn-name"
+            class="form-control"
+            maxlength="100"
+            placeholder="مثال: نطاق مكتب مدينة نصر"
+            [value]="name()"
+            (input)="setName($event)"
+          />
+        </div>
+
+        <div>
+          <label class="form-label" for="zn-radius">نصف القطر</label>
+          <div class="zn-radius">
+            <input
+              type="range"
+              class="form-range"
+              min="0"
+              [max]="SLIDER_STEPS"
+              step="1"
+              dir="ltr"
+              aria-label="نصف القطر"
+              [attr.aria-valuetext]="formatMeters(radius())"
+              [value]="sliderValue()"
+              (input)="onSlider($event)"
+              (change)="fit()"
+            />
+            <div class="zn-radius__num">
+              <input
+                id="zn-radius"
+                type="number"
+                class="form-control ltr"
+                [min]="MIN"
+                [max]="MAX"
+                step="50"
+                [value]="radius()"
+                (change)="onRadiusInput($event)"
+              />
+              <span class="muted">متر</span>
+            </div>
+          </div>
+          <div class="zn-radius__value">
+            <strong>{{ formatMeters(radius()) }}</strong>
+            <span class="muted">({{ formatMeters(MIN) }} – {{ formatMeters(MAX) }})</span>
+          </div>
+          <div class="zn-presets" role="group" aria-label="أحجام سريعة">
+            @for (p of presets; track p) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-ghost]="radius() !== p"
+                (click)="setRadius(p)"
+              >
+                {{ formatMeters(p) }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div>
+          <span class="form-label d-block">المركز</span>
+          @if (center(); as c) {
+            <div class="zn-center">
+              <span class="ltr">{{ c[0].toFixed(5) }}, {{ c[1].toFixed(5) }}</span>
+              @if (bike()) {
+                <button type="button" class="btn btn-sm btn-ghost" (click)="centerOnBike()">
+                  <app-icon name="bike" [size]="14" />
+                  على موقع الموتوسيكل
+                </button>
+              }
+              <button type="button" class="btn btn-sm btn-ghost" (click)="fit()">
+                <app-icon name="target" [size]="14" />
+                عرض النطاق
+              </button>
+            </div>
+          } @else {
+            <p class="muted mb-0">لم يُحدَّد — اضغط على الخريطة.</p>
+          }
+        </div>
+
+        <div class="form-check form-switch">
+          <input
+            id="zn-active"
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            [checked]="isActive()"
+            (change)="setActive($event)"
+          />
+          <label class="form-check-label" for="zn-active">
+            النطاق مفعّل
+            <small class="muted d-block"
+              >عند الإيقاف يبقى النطاق محفوظًا لكن لا تصدر تنبيهات.</small
+            >
+          </label>
+        </div>
+
+        @if (bikeDistance() !== null) {
+          <p class="zn-status" [class.zn-status--out]="bikeOutside()">
+            <app-icon [name]="bikeOutside() ? 'alert' : 'check-circle'" [size]="14" />
+            الموتوسيكل حاليًا {{ bikeOutside() ? 'خارج' : 'داخل' }} هذه الدائرة (على بعد
+            {{ formatMeters(bikeDistance()) }} من المركز).
+          </p>
+        }
+
+        @if (serverError(); as e) {
+          <div class="alert alert-danger mb-0" role="alert">{{ e }}</div>
+        }
+      </div>
+
+      <div class="modal-actions zn-actions">
+        @if (existing()) {
+          <button
+            type="button"
+            class="btn btn-ghost zn-actions__danger"
+            [disabled]="deleting() || saving()"
+            (click)="remove()"
+          >
+            @if (deleting()) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            } @else {
+              <app-icon name="trash" [size]="16" />
+            }
+            حذف النطاق
+          </button>
+        }
+        <span class="zn-actions__spacer"></span>
+        <button type="button" class="btn" (click)="cancel()">إلغاء</button>
+        <button type="button" class="btn btn-brand" [disabled]="!canSave()" (click)="save()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          حفظ النطاق
+        </button>
+      </div>
+    }
+  </section>
+</div>

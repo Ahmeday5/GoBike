@@ -1,0 +1,405 @@
+@if (notFound()) {
+  <app-page-header title="سجل الصيانة" [backLink]="ROUTES.maintenance" />
+  <section class="panel">
+    <app-empty-state
+      icon="wrench"
+      title="السجل غير موجود"
+      text="ربما حُذف أو يخص مكتبًا آخر لا تملك صلاحية عليه."
+    />
+  </section>
+} @else {
+  <app-page-header
+    [title]="record() ? 'سجل صيانة ' + (record()?.plateNumber ?? '') : 'سجل الصيانة'"
+    [subtitle]="isRepairFlow() ? 'إصلاح من فحص الاستلام — يتطلب اعتماد المشرف' : ''"
+    [backLink]="ROUTES.maintenance"
+  >
+    @if (record(); as r) {
+      @if (canStart()) {
+        <button type="button" class="btn btn-brand" [disabled]="starting()" (click)="start()">
+          @if (starting()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          } @else {
+            <app-icon name="play" [size]="16" />
+          }
+          بدء الصيانة
+        </button>
+      }
+      @if (canComplete()) {
+        <button type="button" class="btn btn-gr" (click)="completeOpen.set(true)">
+          <app-icon name="check-circle" [size]="16" />
+          إكمال
+        </button>
+      }
+      @if (canEdit()) {
+        <button type="button" class="btn" (click)="editOpen.set(true)">
+          <app-icon name="edit" [size]="16" />
+          تعديل
+        </button>
+      }
+      @if (canCancel()) {
+        <button type="button" class="btn btn-ghost mr-danger" (click)="cancelOpen.set(true)">
+          <app-icon name="close" [size]="16" />
+          إلغاء السجل
+        </button>
+      }
+    }
+  </app-page-header>
+
+  @if (recordRes.error(); as err) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ err.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="reload()">إعادة المحاولة</button>
+    </div>
+  }
+
+  @if (!record()) {
+    @if (!recordRes.error()) {
+      <div class="panel" aria-busy="true">
+        <span class="skeleton" style="display: block; width: 14rem; height: 1.25rem"></span>
+        <span
+          class="skeleton"
+          style="
+            display: block;
+            margin-top: 0.75rem;
+            width: 24rem;
+            max-width: 100%;
+            height: 0.875rem;
+          "
+        ></span>
+        <span
+          class="skeleton"
+          style="
+            display: block;
+            margin-top: 0.5rem;
+            width: 18rem;
+            max-width: 100%;
+            height: 0.875rem;
+          "
+        ></span>
+      </div>
+      <div class="mr-grid">
+        <span class="skeleton" style="height: 14rem"></span>
+        <span class="skeleton" style="height: 14rem"></span>
+      </div>
+    }
+  } @else {
+    @let r = record()!;
+
+    <!-- Supervisor rejection — must be impossible to miss. -->
+    @if (returned()) {
+      <section class="mr-banner" role="alert">
+        <span class="mr-banner__icon"><app-icon name="alert" [size]="26" /></span>
+        <div>
+          <strong class="mr-banner__title">رفض المشرف هذا الإصلاح وأعاده للفني</strong>
+          <p class="mr-banner__reason">{{ r.verificationRejectReason }}</p>
+          <p class="mr-banner__hint">عالج الملاحظة، حدّث التقرير، ثم أرسله للمشرف مرة أخرى.</p>
+        </div>
+      </section>
+    } @else if (resubmittedAfterReject()) {
+      <section class="mr-note" role="note">
+        <app-icon name="info" [size]="16" />
+        <span><strong>سبب الرفض السابق:</strong> {{ r.verificationRejectReason }}</span>
+      </section>
+    }
+
+    <section
+      class="panel mr-hero"
+      [class.mr-hero--open]="isOpen()"
+      [class.mr-hero--refreshing]="recordRes.loading()"
+    >
+      <div class="mr-hero__chips">
+        <app-enum-chip [map]="STATUS" [value]="r.status" />
+        <app-enum-chip [map]="TYPE" [value]="r.type" />
+        @if (r.requiresSupervisorApproval) {
+          <app-chip tone="purple" icon="shield">يتطلب اعتماد المشرف</app-chip>
+        }
+        @if (r.resetsMaintenanceCycle) {
+          <app-chip tone="info" icon="droplet">يُصفِّر عدّاد الزيت</app-chip>
+        }
+      </div>
+      <dl class="kv">
+        <div>
+          <dt>الموتوسيكل</dt>
+          <dd>
+            <a class="ltr" [routerLink]="ROUTES.motorcycle(r.motorcycleId)">{{
+              r.plateNumber ?? 'عرض الموتوسيكل'
+            }}</a>
+          </dd>
+        </div>
+        @if (r.inspectionId) {
+          <div>
+            <dt>فحص الاستلام</dt>
+            <dd>
+              <a [routerLink]="ROUTES.inspection(r.inspectionId)">
+                <app-icon name="search" [size]="14" /> عرض تقرير الفحص
+              </a>
+            </dd>
+          </div>
+        }
+        @if (r.scheduledAtUtc) {
+          <div>
+            <dt>الموعد</dt>
+            <dd>{{ r.scheduledAtUtc | cairoDate }}</dd>
+          </div>
+        }
+        @if (r.startedAtUtc) {
+          <div>
+            <dt>بدأت</dt>
+            <dd>{{ r.startedAtUtc | cairoDate }}</dd>
+          </div>
+        }
+        @if (r.reportedAtUtc) {
+          <div>
+            <dt>أُرسل للمشرف</dt>
+            <dd>{{ r.reportedAtUtc | cairoDate }}</dd>
+          </div>
+        }
+        @if (r.verifiedAtUtc) {
+          <div>
+            <dt>اعتمده المشرف</dt>
+            <dd>{{ r.verifiedAtUtc | cairoDate }}</dd>
+          </div>
+        }
+        @if (r.completedAtUtc) {
+          <div>
+            <dt>اكتملت</dt>
+            <dd>{{ r.completedAtUtc | cairoDate }}</dd>
+          </div>
+        }
+        <div>
+          <dt>الورشة</dt>
+          <dd>{{ r.workshop || '—' }}</dd>
+        </div>
+        <div>
+          <dt>الفني</dt>
+          <dd>{{ r.technician || '—' }}</dd>
+        </div>
+      </dl>
+      @if (r.issueDescription) {
+        <p class="mr-text"><strong>المشكلة:</strong> {{ r.issueDescription }}</p>
+      }
+      @if (r.workPerformed) {
+        <p class="mr-text"><strong>الأعمال المنفذة:</strong> {{ r.workPerformed }}</p>
+      }
+      @if (r.notes) {
+        <p class="mr-text muted"><strong>ملاحظات:</strong> {{ r.notes }}</p>
+      }
+    </section>
+
+    <!-- Supervisor verification -->
+    @if (canVerify()) {
+      <section class="panel mr-verify" style="--i: 1">
+        <div class="panel__head">
+          <h2 class="panel__title"><app-icon name="shield" [size]="18" /> اعتماد المشرف</h2>
+        </div>
+        <p class="mr-verify__text">
+          أنهى الفني الإصلاح:
+          <strong>{{ fixedCount() }} من {{ faults().length }}</strong> عطل مُصلَح، التكلفة
+          <span class="amount">{{ costs()?.total | money }}</span
+          >. راجع الأعطال والقطع أدناه ثم اعتمد أو ارفض.
+        </p>
+        <p class="form-hint">
+          عند الاعتماد تعود الموتوسيكل <strong>خضراء ومتاحة</strong>. عند الرفض يعود الإصلاح للفني
+          مع السبب.
+        </p>
+        <div class="mr-verify__actions">
+          <button
+            type="button"
+            class="btn btn-gr btn-lg"
+            [disabled]="approving()"
+            (click)="approve()"
+          >
+            @if (approving()) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            } @else {
+              <app-icon name="check-circle" [size]="18" />
+            }
+            اعتماد الإصلاح
+          </button>
+          <button
+            type="button"
+            class="btn btn-re btn-lg"
+            [disabled]="approving()"
+            (click)="rejectOpen.set(true)"
+          >
+            <app-icon name="close" [size]="18" />
+            رفض
+          </button>
+        </div>
+      </section>
+    } @else if (r.status === 'AwaitingSupervisorApproval') {
+      <section class="mr-note mr-note--info" role="status">
+        <app-icon name="clock" [size]="16" />
+        <span>تم إرسال الإصلاح للمشرف وهو بانتظار الاعتماد. تبقى الموتوسيكل حمراء حتى يعتمده.</span>
+      </section>
+    }
+
+    <!-- Technician report (editable) or read-only faults & parts -->
+    @if (canReport()) {
+      <section class="panel" style="--i: 2">
+        <div class="panel__head">
+          <h2 class="panel__title"><app-icon name="wrench" [size]="18" /> تقرير الفني</h2>
+        </div>
+        <app-technician-report [record]="r" (saved)="onReportSaved()" />
+      </section>
+    } @else {
+      <div class="mr-grid">
+        <section class="panel" style="--i: 2">
+          <div class="panel__head">
+            <h2 class="panel__title"><app-icon name="alert" [size]="18" /> الأعطال</h2>
+            @if (faults().length) {
+              <span class="muted mr-small"
+                >تم إصلاح {{ fixedCount() }} من {{ faults().length }}</span
+              >
+            }
+          </div>
+          @if (faults().length) {
+            <ol class="mr-faults">
+              @for (f of faults(); track $index) {
+                <li
+                  class="mr-fault"
+                  [class.mr-fault--fixed]="f.isFixed"
+                  [attr.data-sev]="f.severity"
+                >
+                  <span class="mr-fault__desc">{{ f.description }}</span>
+                  <app-enum-chip [map]="SEVERITY" [value]="f.severity" [small]="true" />
+                  @if (f.isFixed) {
+                    <app-chip tone="success" icon="check-circle" [small]="true"
+                      >تم الإصلاح</app-chip
+                    >
+                  } @else {
+                    <app-chip tone="neutral" icon="clock" [small]="true">لم يُصلَح</app-chip>
+                  }
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="muted mr-small">لا توجد أعطال مسجّلة.</p>
+          }
+        </section>
+
+        <section class="panel" style="--i: 3">
+          <div class="panel__head">
+            <h2 class="panel__title"><app-icon name="cash" [size]="18" /> التكلفة</h2>
+          </div>
+          @if (costs(); as c) {
+            <dl class="mr-costs">
+              <div>
+                <dt>المصنعية</dt>
+                <dd class="amount">{{ c.labor | money }}</dd>
+              </div>
+              <div>
+                <dt>قطع الغيار</dt>
+                <dd class="amount">{{ c.parts | money }}</dd>
+              </div>
+              <div>
+                <dt>تكاليف أخرى</dt>
+                <dd class="amount">{{ c.other | money }}</dd>
+              </div>
+              <div class="mr-costs__total">
+                <dt>الإجمالي</dt>
+                <dd class="amount">{{ c.total | money }}</dd>
+              </div>
+            </dl>
+          }
+        </section>
+      </div>
+
+      <section class="panel" style="--i: 4">
+        <div class="panel__head">
+          <h2 class="panel__title"><app-icon name="wrench" [size]="18" /> قطع الغيار</h2>
+        </div>
+        @if (parts().length) {
+          <div class="tw mr-parts">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">القطعة</th>
+                  <th scope="col">رقم القطعة</th>
+                  <th scope="col">الكمية</th>
+                  <th scope="col">سعر الوحدة</th>
+                  <th scope="col">الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of parts(); track $index) {
+                  <tr>
+                    <td>{{ p.partName }}</td>
+                    <td class="ltr">{{ p.partNumber || '—' }}</td>
+                    <td class="ltr">{{ p.quantity | num: true }}</td>
+                    <td>
+                      <span class="amount">{{ p.unitCost | money }}</span>
+                    </td>
+                    <td>
+                      <span class="amount">{{
+                        lineTotal(p.quantity, p.unitCost, p.totalCost) | money
+                      }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row" colspan="4" class="mr-parts__foot">إجمالي القطع</th>
+                  <td>
+                    <span class="amount">{{ costs()?.parts | money }}</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        } @else {
+          <p class="muted mr-small">لم تُستخدم قطع غيار.</p>
+        }
+      </section>
+    }
+
+    <section class="panel" style="--i: 5" *appHasPermission="P.Documents.Read">
+      <div class="panel__head">
+        <h2 class="panel__title"><app-icon name="file" [size]="18" /> المستندات</h2>
+      </div>
+      <app-documents-panel ownerType="MaintenanceRecord" [ownerId]="r.id" />
+    </section>
+  }
+}
+
+<app-record-form-dialog
+  [open]="editOpen()"
+  [record]="record()"
+  (closed)="editOpen.set(false)"
+  (saved)="onEdited()"
+/>
+<app-complete-record-dialog
+  [open]="completeOpen()"
+  [record]="record()"
+  (closed)="completeOpen.set(false)"
+  (done)="onCompleted()"
+/>
+<app-reason-dialog
+  [open]="cancelOpen()"
+  title="إلغاء سجل الصيانة"
+  label="سبب الإلغاء"
+  [message]="
+    'سيُلغى سجل صيانة الموتوسيكل ' +
+    (record()?.plateNumber ?? '') +
+    '. لا يمكن التراجع عن هذا الإجراء.'
+  "
+  confirmText="إلغاء السجل"
+  successMessage="تم إلغاء سجل الصيانة"
+  [action]="cancelAction"
+  (closed)="cancelOpen.set(false)"
+  (done)="onCancelled()"
+/>
+<app-reason-dialog
+  [open]="rejectOpen()"
+  title="رفض الإصلاح"
+  label="سبب الرفض"
+  message="سيظهر السبب للفني بشكل واضح في صفحة الإصلاح."
+  placeholder="مثال: الفرامل الأمامية ما زالت تُصدر صوتًا"
+  confirmText="رفض وإعادة للفني"
+  successMessage="تم رفض الإصلاح وإعادته للفني"
+  [action]="rejectAction"
+  [confirm]="rejectConfirm()"
+  (closed)="rejectOpen.set(false)"
+  (done)="onRejected()"
+/>

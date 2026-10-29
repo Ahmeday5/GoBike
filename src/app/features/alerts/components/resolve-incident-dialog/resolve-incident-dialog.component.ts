@@ -25,7 +25,13 @@ import { AUTO_RESOLVING_TYPES, GpsIncidentDto } from '../../models/alerts.models
   selector: 'app-resolve-incident-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ModalComponent, FormErrorComponent, EnumChipComponent, IconComponent],
+  imports: [
+    ReactiveFormsModule,
+    ModalComponent,
+    FormErrorComponent,
+    EnumChipComponent,
+    IconComponent,
+  ],
   template: `
     <app-modal [open]="!!incident()" title="حل الحادثة" size="md" (closed)="closed.emit()">
       @if (incident(); as i) {

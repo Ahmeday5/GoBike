@@ -1,0 +1,141 @@
+<div class="filters" role="search">
+  <div class="form-check form-switch al-switch">
+    <input
+      id="oa-open"
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      [checked]="f().openOnly"
+      (change)="toggleOpenOnly($event)"
+    />
+    <label class="form-check-label" for="oa-open">المفتوحة فقط</label>
+  </div>
+
+  <select
+    class="form-select"
+    aria-label="المستوى"
+    [value]="f().level"
+    (change)="select('level', $event)"
+  >
+    <option value="">كل المستويات</option>
+    @for (o of levelOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }} ({{ levelKm(o.value) }} كم)</option>
+    }
+  </select>
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().status"
+    (change)="select('status', $event)"
+  >
+    <option value="">كل الحالات</option>
+    @for (o of statusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (alerts.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="alerts.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="alerts.loading()"
+  emptyIcon="droplet"
+  [emptyTitle]="hasFilters() ? 'لا توجد تنبيهات مطابقة' : 'لا توجد تنبيهات زيت مفتوحة'"
+  [emptyText]="hasFilters() ? 'جرّب تغيير الفلاتر' : 'كل الموتوسيكلات ضمن حدود تغيير الزيت.'"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="alerts.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<ng-template #plateTpl let-a>
+  <a class="al-plate ltr" [routerLink]="motorcycleLink(a.motorcycleId)">{{
+    a.plateNumber ?? '—'
+  }}</a>
+  @if (a.officeName) {
+    <div class="muted al-sub">{{ a.officeName }}</div>
+  }
+</ng-template>
+<ng-template #driverTpl let-a>
+  @if (a.driverId) {
+    <a [routerLink]="driverLink(a.driverId)">{{ a.driverName ?? 'السائق' }}</a>
+  } @else {
+    <span class="muted">{{ a.driverName ?? '—' }}</span>
+  }
+</ng-template>
+<ng-template #levelTpl let-a>
+  <span class="al-level">
+    <app-enum-chip [map]="LEVEL" [value]="a.level" [small]="true" />
+    <span class="muted al-sub ltr">{{ levelKm(a.level) }} كم</span>
+  </span>
+</ng-template>
+<ng-template #kmTpl let-a>
+  <span class="ltr">{{ a.kmSinceOilChange ?? a.kmAtAlert | km }}</span>
+</ng-template>
+<ng-template #raisedTpl let-a>
+  <span [title]="a.raisedAtUtc ?? a.createdAtUtc | cairoDate">
+    {{ a.raisedAtUtc ?? a.createdAtUtc | cairoDate: 'relative' }}
+  </span>
+</ng-template>
+<ng-template #statusTpl let-a>
+  <app-enum-chip [map]="STATUS" [value]="a.status" [small]="true" />
+  @if (a.acknowledgedByName) {
+    <div class="muted al-sub">{{ a.acknowledgedByName }}</div>
+  }
+</ng-template>
+<ng-template #actionsTpl let-a>
+  @if (a.status === 'Open') {
+    <button
+      *appHasPermission="P.Alerts.Manage"
+      type="button"
+      class="btn btn-sm"
+      [disabled]="busyId() === a.id"
+      (click)="acknowledge(a)"
+    >
+      @if (busyId() === a.id) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      } @else {
+        <app-icon name="eye" [size]="14" />
+      }
+      تم الاطلاع
+    </button>
+  }
+</ng-template>

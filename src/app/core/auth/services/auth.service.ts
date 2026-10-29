@@ -89,6 +89,14 @@ export class AuthService {
   private readonly zone = inject(NgZone);
   private readonly httpCache = inject(HttpCacheService);
 
+  /**
+   * The access token lives in memory only, so a script reading storage can't
+   * lift it; only the refresh token is persisted (brief §7). After a reload —
+   * or a sign-in in another tab — this is null until the interceptor's first
+   * request mints one from the refresh token.
+   */
+  private accessToken: string | null = null;
+
   private readonly currentUserSignal = signal<User | null>(this.loadStoredUser());
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentUserSignal());
@@ -124,6 +132,8 @@ export class AuthService {
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   constructor() {
+    // Builds before the in-memory access token persisted it — drop the copy.
+    this.storage.remove(environment.tokenKey);
     this.initCrossTabSync();
     this.initVisibilityRecovery();
     if (this.isLoggedIn()) {
@@ -289,15 +299,16 @@ export class AuthService {
   }
 
   getAccessToken(): string | null {
-    return this.storage.get(environment.tokenKey);
+    return this.accessToken;
   }
 
   getRefreshToken(): string | null {
     return this.storage.get(environment.refreshTokenKey);
   }
 
+  /** A session exists while a refresh token does; the access token may still need minting. */
   isLoggedIn(): boolean {
-    return !!this.getAccessToken() && !!this.getRefreshToken();
+    return !!this.getRefreshToken();
   }
 
   hasRole(role: UserRole): boolean {
@@ -400,8 +411,14 @@ export class AuthService {
         // instead of throwing — otherwise the next attempt sends a token the
         // server already consumed and we get a self-inflicted 401 → logout.
         map((data) => this.persistSession(data, false)),
-        catchError((err) => this.recoverOrFail(err)),
+        catchError((err) => this.recoverOrFail(err, refreshToken)),
       );
+  }
+
+  /** Another tab rotated the refresh token after we read it — ours is simply stale. */
+  private rotatedElsewhere(sentToken: string): boolean {
+    const current = this.getRefreshToken();
+    return !!current && current !== sentToken;
   }
 
   /**
@@ -415,26 +432,16 @@ export class AuthService {
    *  3. Transient (network, CORS, 5xx) — server didn't disown the token, we
    *     just couldn't reach it. Backoff + retry; keep session alive.
    */
-  private recoverOrFail(err: unknown): Observable<AuthTokens> {
-    // Cheap pre-check: another tab may have already broadcasted a refresh by
-    // the time the failure landed. Skip the wait when possible.
-    const immediate = this.readFreshTokens();
-    if (immediate) {
-      this.refreshFailureStreak = 0;
-      this.scheduleProactiveRefresh();
-      return of(immediate);
-    }
+  private recoverOrFail(err: unknown, sentToken: string): Observable<AuthTokens> {
+    // Cheap pre-check: another tab may have already rotated the refresh token
+    // by the time the failure landed — retry once with the new one.
+    if (this.rotatedElsewhere(sentToken)) return this.executeRefresh();
 
     if (this.isReuseDetected(err)) {
       return of(null).pipe(
         delay(REUSE_RACE_RECHECK_DELAY_MS),
         switchMap(() => {
-          const recovered = this.readFreshTokens();
-          if (recovered) {
-            this.refreshFailureStreak = 0;
-            this.scheduleProactiveRefresh();
-            return of(recovered);
-          }
+          if (this.rotatedElsewhere(sentToken)) return this.executeRefresh();
           // Genuine reuse — token family is dead server-side, session is gone.
           this.scheduleSessionExpiredLogout();
           return throwError(() => err);
@@ -480,7 +487,7 @@ export class AuthService {
     // successful 2xx is never thrown away. Login always returns both.
     const fallbackRefreshToken = updateUser ? null : this.getRefreshToken();
     const tokens = this.extractTokens(data, fallbackRefreshToken);
-    this.storage.set(environment.tokenKey, tokens.accessToken);
+    this.accessToken = tokens.accessToken;
     this.storage.set(environment.refreshTokenKey, tokens.refreshToken);
 
     if (updateUser && data.userId) {
@@ -502,7 +509,7 @@ export class AuthService {
   }
 
   private clearLocalSession(): void {
-    this.storage.remove(environment.tokenKey);
+    this.accessToken = null;
     this.storage.remove(environment.refreshTokenKey);
     this.storage.remove(USER_KEY);
     this.currentUserSignal.set(null);
@@ -515,7 +522,7 @@ export class AuthService {
   }
 
   private loadStoredUser(): User | null {
-    if (!this.getAccessToken() || !this.getRefreshToken()) return null;
+    if (!this.getRefreshToken()) return null;
     const stored = this.storage.getJson<User>(USER_KEY);
     if (!stored) return null;
     // Users cached by an older build lack the scope fields — fill safe defaults.
@@ -747,7 +754,7 @@ export class AuthService {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (e) => {
-        if (e.key !== environment.tokenKey) return;
+        if (e.key !== environment.refreshTokenKey) return;
         this.onCrossTabMessage({
           type: e.newValue ? 'session-updated' : 'logged-out',
           from: 'storage-event',

@@ -1,0 +1,53 @@
+/* Icon-only row actions in settings tables. Shared via `styleUrls` by the settings pages. */
+.ra {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.ra__btn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--txt2);
+  cursor: pointer;
+  transition:
+    color var(--dur-2),
+    background var(--dur-2),
+    border-color var(--dur-2),
+    transform var(--dur-2) var(--ease-out);
+
+  &:hover:not(:disabled) {
+    color: var(--primary);
+    background: var(--primary-soft);
+    border-color: var(--primary-soft-2, var(--brd));
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--warn:hover:not(:disabled) {
+    color: var(--am);
+    background: var(--am-l);
+    border-color: transparent;
+  }
+  &--danger:hover:not(:disabled) {
+    color: var(--re);
+    background: var(--re-l);
+    border-color: transparent;
+  }
+}

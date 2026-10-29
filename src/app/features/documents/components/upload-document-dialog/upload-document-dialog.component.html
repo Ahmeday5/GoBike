@@ -1,0 +1,110 @@
+<app-modal [open]="open()" title="رفع مستند" size="md" (closed)="closed.emit()">
+  <!-- Rebuilt on every open so the owner picker starts empty. -->
+  @if (open()) {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-grid">
+        <div class="span-2">
+          <label class="form-label" for="ud-owner-type">يخص *</label>
+          <select id="ud-owner-type" class="form-select" formControlName="ownerType">
+            @for (o of ownerTypes; track o.value) {
+              <option [value]="o.value">{{ o.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="span-2">
+          @let o = owner();
+          <label class="form-label" for="ud-owner">{{ o.field }} *</label>
+          @if (o.kind === 'list') {
+            <app-remote-picker
+              inputId="ud-owner"
+              formControlName="ownerId"
+              [search]="search()"
+              [initial]="presetOption()"
+              [icon]="o.icon"
+              [placeholder]="'اختر ' + o.field + '…'"
+              [searchPlaceholder]="o.searchPlaceholder"
+              [invalid]="form.controls.ownerId.invalid && form.controls.ownerId.touched"
+            />
+          } @else {
+            <input
+              id="ud-owner"
+              type="text"
+              class="form-control ltr"
+              formControlName="ownerId"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              [class.is-invalid]="form.controls.ownerId.invalid && form.controls.ownerId.touched"
+            />
+            <div class="form-hint">لا توجد قائمة لهذا النوع بعد — الصق المعرّف (GUID).</div>
+          }
+          <app-form-error [control]="form.controls.ownerId" [label]="o.field" />
+        </div>
+
+        <div class="span-2">
+          <label
+            class="ud-drop"
+            [class.ud-drop--active]="dragging()"
+            [class.ud-drop--has-file]="file()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="dragging.set(false)"
+            (drop)="onDrop($event)"
+          >
+            <input
+              type="file"
+              class="visually-hidden"
+              [accept]="accept"
+              (change)="onFileInput($event)"
+            />
+            <app-icon [name]="file() ? 'check-circle' : 'upload'" [size]="28" />
+            @if (file(); as f) {
+              <strong>{{ f.name }}</strong>
+              <span class="muted ltr">{{ f.size | bytes }}</span>
+            } @else {
+              <strong>اسحب الملف هنا أو اضغط للاختيار</strong>
+              <span class="muted">PDF أو صورة (JPG، PNG، WEBP) — حتى 10 ميجابايت</span>
+            }
+          </label>
+          @if (fileError(); as e) {
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          }
+        </div>
+
+        <div>
+          <label class="form-label" for="ud-cat">التصنيف *</label>
+          <select id="ud-cat" class="form-select" formControlName="category">
+            @for (o of categoryOptions; track o.value) {
+              <option [value]="o.value">{{ o.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="ud-exp">تاريخ الانتهاء</label>
+          <input id="ud-exp" type="date" class="form-control" formControlName="expiryDate" />
+          <app-form-error [control]="form.controls.expiryDate" label="تاريخ الانتهاء" />
+        </div>
+        <div class="span-2">
+          <label class="form-label" for="ud-title">العنوان</label>
+          <input id="ud-title" class="form-control" formControlName="title" />
+          <app-form-error [control]="form.controls.title" label="العنوان" />
+        </div>
+        <div class="span-2">
+          <label class="form-label" for="ud-notes">ملاحظات</label>
+          <textarea id="ud-notes" class="form-control" rows="2" formControlName="notes"></textarea>
+          <app-form-error [control]="form.controls.notes" label="ملاحظات" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="closed.emit()">إلغاء</button>
+        <button type="submit" class="btn btn-brand" [disabled]="uploading()">
+          @if (uploading()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          رفع
+        </button>
+      </div>
+    </form>
+  }
+</app-modal>

@@ -1,0 +1,163 @@
+<app-page-header title="المكاتب" subtitle="فروع الشركة ومديروها وإحصائياتها">
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Offices.Manage"
+    (click)="openCreate()"
+  >
+    <app-icon name="plus" [size]="16" />
+    إضافة مكتب
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث بالاسم أو الكود…"
+  />
+  <app-search-input
+    [value]="f().city"
+    (valueChange)="filters.patch({ city: $event })"
+    placeholder="المدينة"
+  />
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().isActive"
+    (change)="selectActive($event)"
+  >
+    <option value="">كل الحالات</option>
+    <option value="true">نشط</option>
+    <option value="false">موقوف</option>
+  </select>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (offices.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="offices.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="offices.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  [rowClickable]="true"
+  (rowClick)="viewing.set($event)"
+  emptyIcon="building"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا توجد مكاتب بعد'"
+  [emptyText]="hasFilters() ? 'جرّب تغيير كلمات البحث أو الفلاتر' : ''"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="offices.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-office-form-dialog
+  [open]="formOpen()"
+  [office]="editing()"
+  (closed)="closeForm()"
+  (saved)="onSaved()"
+/>
+<app-office-details-dialog
+  [office]="viewing()"
+  [canManage]="canManage()"
+  (closed)="viewing.set(null)"
+  (edit)="openEdit(viewing()!)"
+/>
+
+<ng-template #nameTpl let-o>
+  <strong>{{ o.name }}</strong>
+  @if (o.code) {
+    <div class="muted ltr" style="font-size: var(--fs-xs)">{{ o.code }}</div>
+  }
+</ng-template>
+<ng-template #managerTpl let-o>
+  @if (o.managerName) {
+    {{ o.managerName }}
+  } @else {
+    <span class="muted">بدون مدير</span>
+  }
+</ng-template>
+<ng-template #phoneTpl let-o>
+  @if (o.phone) {
+    <span class="ltr">{{ o.phone }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #activeTpl let-o>
+  @if (o.isActive) {
+    <app-chip tone="success" icon="check-circle" [small]="true">نشط</app-chip>
+  } @else {
+    <app-chip tone="neutral" icon="pause" [small]="true">موقوف</app-chip>
+  }
+</ng-template>
+<ng-template #actionsTpl let-o>
+  <!-- Buttons live inside a clickable row: stop the click from also opening the details. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
+  <div class="ra" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button
+      type="button"
+      class="ra__btn"
+      title="التفاصيل والإحصائيات"
+      aria-label="التفاصيل والإحصائيات"
+      (click)="viewing.set(o)"
+    >
+      <app-icon name="chart" [size]="16" />
+    </button>
+    @if (canManage()) {
+      <button
+        type="button"
+        class="ra__btn"
+        title="تعديل"
+        aria-label="تعديل المكتب"
+        (click)="openEdit(o)"
+      >
+        <app-icon name="edit" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="ra__btn"
+        [class.ra__btn--warn]="o.isActive"
+        [title]="o.isActive ? 'إيقاف' : 'تفعيل'"
+        [attr.aria-label]="o.isActive ? 'إيقاف المكتب' : 'تفعيل المكتب'"
+        [disabled]="busyId() === o.id"
+        (click)="toggleActive(o)"
+      >
+        <app-icon [name]="o.isActive ? 'pause' : 'play'" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="ra__btn ra__btn--danger"
+        title="حذف"
+        aria-label="حذف المكتب"
+        [disabled]="busyId() === o.id"
+        (click)="remove(o)"
+      >
+        <app-icon name="trash" [size]="16" />
+      </button>
+    }
+  </div>
+</ng-template>

@@ -1,0 +1,70 @@
+.mp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.mp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--brd2);
+  border-radius: var(--r-full);
+  background: var(--bg2);
+  color: var(--txt2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--dur-2),
+    color var(--dur-2),
+    border-color var(--dur-2);
+
+  &:hover {
+    background: var(--bg3);
+    color: var(--txt);
+  }
+  &--active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+}
+.mp-chip__badge {
+  min-width: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: var(--r-full);
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.mp-plate {
+  display: grid;
+  justify-items: start;
+  gap: 0.125rem;
+}
+.mp-sub {
+  font-size: var(--fs-xs);
+}
+.mp-returned {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: var(--r-full);
+  background: var(--re-l);
+  color: var(--re);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+.mp-issue {
+  display: inline-block;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}

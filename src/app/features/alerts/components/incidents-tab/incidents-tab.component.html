@@ -1,0 +1,209 @@
+<div class="filters" role="search">
+  <div class="form-check form-switch al-switch">
+    <input
+      [id]="'inc-unresolved-' + mode()"
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      [checked]="f().unresolvedOnly"
+      (change)="toggleUnresolved($event)"
+    />
+    <label class="form-check-label" [for]="'inc-unresolved-' + mode()">غير المحلولة فقط</label>
+  </div>
+
+  @if (mode() === 'gps') {
+    <select
+      class="form-select"
+      aria-label="النوع"
+      [value]="f().type"
+      (change)="select('type', $event)"
+    >
+      <option value="">كل الأنواع</option>
+      @for (o of typeOptions; track o.value) {
+        <option [value]="o.value">{{ o.label }}</option>
+      }
+    </select>
+  }
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().status"
+    (change)="select('status', $event)"
+  >
+    <option value="">كل الحالات</option>
+    @for (o of statusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  <label class="al-range">
+    من
+    <input
+      type="datetime-local"
+      class="form-control"
+      aria-label="من تاريخ"
+      [value]="f().from"
+      [attr.max]="f().to || null"
+      (change)="setRange('from', $event)"
+    />
+  </label>
+  <label class="al-range">
+    إلى
+    <input
+      type="datetime-local"
+      class="form-control"
+      aria-label="إلى تاريخ"
+      [value]="f().to"
+      [attr.min]="f().from || null"
+      (change)="setRange('to', $event)"
+    />
+  </label>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (incidents.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="incidents.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="incidents.loading()"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  [emptyIcon]="mode() === 'zone' ? 'target' : 'power'"
+  [emptyTitle]="
+    hasFilters()
+      ? 'لا توجد حوادث مطابقة'
+      : mode() === 'zone'
+        ? 'لا يوجد موتوسيكل خارج نطاقه'
+        : 'لا توجد أعطال تتبع أو كهرباء مفتوحة'
+  "
+  [emptyText]="hasFilters() ? 'جرّب تغيير الفلاتر' : 'كل أجهزة التتبع تعمل بشكل طبيعي.'"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="incidents.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-resolve-incident-dialog
+  [incident]="resolving()"
+  (closed)="resolving.set(null)"
+  (resolved)="onResolved()"
+/>
+
+<ng-template #plateTpl let-i>
+  @if (i.motorcycleId) {
+    <a
+      class="al-plate ltr"
+      [routerLink]="motorcycleLink(i.motorcycleId)"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+      >{{ i.plateNumber ?? '—' }}</a
+    >
+  } @else {
+    <span class="al-plate ltr">{{ i.plateNumber ?? i.imei ?? '—' }}</span>
+  }
+  @if (i.driverName) {
+    <div class="muted al-sub">{{ i.driverName }}</div>
+  }
+</ng-template>
+<ng-template #typeTpl let-i>
+  @if (i.type === 'SuspectedPowerDisconnect') {
+    <span class="al-type" [title]="SUSPECTED_HINT">
+      <app-enum-chip [map]="TYPE" [value]="i.type" [small]="true" />
+      <app-icon name="help" [size]="14" />
+      <span class="visually-hidden">{{ SUSPECTED_HINT }}</span>
+    </span>
+  } @else {
+    <app-enum-chip [map]="TYPE" [value]="i.type" [small]="true" />
+  }
+</ng-template>
+<ng-template #statusTpl let-i>
+  <app-enum-chip [map]="STATUS" [value]="i.status" [small]="true" />
+  @if (autoResolves(i)) {
+    <div class="al-auto" title="يُغلق تلقائيًا عند عودة الإشارة أو رجوع الموتوسيكل للنطاق">
+      <app-icon name="refresh" [size]="12" />
+      يُغلق تلقائيًا
+    </div>
+  } @else if (i.autoResolved) {
+    <div class="al-auto"><app-icon name="check" [size]="12" />أُغلق تلقائيًا</div>
+  }
+</ng-template>
+<ng-template #startedTpl let-i>
+  <span [title]="startedAt(i) | cairoDate">{{ startedAt(i) | cairoDate: 'relative' }}</span>
+</ng-template>
+<ng-template #lastSeenTpl let-i>
+  @if (i.lastSeenAtUtc) {
+    <span [title]="i.lastSeenAtUtc | cairoDate">{{ i.lastSeenAtUtc | cairoDate: 'relative' }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #actionsTpl let-i>
+  <!-- Actions sit inside a clickable row: keep their clicks/keys from opening the incident. -->
+  <div class="al-actions">
+    <ng-container *appHasPermission="P.Incidents.Manage">
+      @if (i.status === 'Open') {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [disabled]="busyId() === i.id"
+          (click)="$event.stopPropagation(); acknowledge(i)"
+          (keydown)="$event.stopPropagation()"
+        >
+          @if (busyId() === i.id) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          } @else {
+            <app-icon name="eye" [size]="14" />
+          }
+          تم الاطلاع
+        </button>
+      }
+      @if (i.status !== 'Resolved') {
+        <button
+          type="button"
+          class="btn btn-sm btn-brand"
+          (click)="$event.stopPropagation(); resolving.set(i)"
+          (keydown)="$event.stopPropagation()"
+        >
+          <app-icon name="check-circle" [size]="14" />
+          حل
+        </button>
+      }
+    </ng-container>
+  </div>
+</ng-template>

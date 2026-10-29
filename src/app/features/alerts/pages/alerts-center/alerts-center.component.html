@@ -1,0 +1,76 @@
+<app-page-header
+  title="مركز التنبيهات"
+  subtitle="تنبيهات تغيير الزيت وأعطال التتبع والكهرباء والخروج من النطاق"
+/>
+
+<div class="stats ac-stats" role="group" aria-label="ملخص التنبيهات المفتوحة">
+  @if (canOil()) {
+    <button
+      type="button"
+      class="stat stat--button stat--warning"
+      [class.stat--active]="activeTab() === 'oil'"
+      style="--i: 0"
+      (click)="setTab('oil')"
+    >
+      <span class="stat__icon"><app-icon name="droplet" [size]="20" /></span>
+      <span>
+        @if (oilCount() === null) {
+          <span class="skeleton ac-stats__skeleton"></span>
+        } @else {
+          <span class="stat__value ltr">{{ oilCount() | num }}</span>
+        }
+        <span class="stat__label">تنبيهات زيت مفتوحة</span>
+      </span>
+    </button>
+  }
+  @if (canIncidents()) {
+    <button
+      type="button"
+      class="stat stat--button stat--danger"
+      [class.stat--active]="activeTab() === 'gps'"
+      style="--i: 1"
+      (click)="setTab('gps')"
+    >
+      <span class="stat__icon"><app-icon name="power" [size]="20" /></span>
+      <span>
+        @if (gpsCount() === null) {
+          <span class="skeleton ac-stats__skeleton"></span>
+        } @else {
+          <span class="stat__value ltr">{{ gpsCount() | num }}</span>
+        }
+        <span class="stat__label">أعطال تتبع وكهرباء مفتوحة</span>
+      </span>
+    </button>
+    <button
+      type="button"
+      class="stat stat--button stat--danger"
+      [class.stat--active]="activeTab() === 'zone'"
+      style="--i: 2"
+      (click)="setTab('zone')"
+    >
+      <span class="stat__icon"><app-icon name="target" [size]="20" /></span>
+      <span>
+        @if (zoneCount() === null) {
+          <span class="skeleton ac-stats__skeleton"></span>
+        } @else {
+          <span class="stat__value ltr">{{ zoneCount() | num }}</span>
+        }
+        <span class="stat__label">خارج النطاق الآن</span>
+      </span>
+    </button>
+  }
+</div>
+
+<app-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="setTab($event)" />
+
+@switch (activeTab()) {
+  @case ('oil') {
+    <app-oil-alerts-tab (changed)="refreshCounters()" />
+  }
+  @case ('gps') {
+    <app-incidents-tab mode="gps" (changed)="refreshCounters()" />
+  }
+  @case ('zone') {
+    <app-incidents-tab mode="zone" (changed)="refreshCounters()" />
+  }
+}

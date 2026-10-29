@@ -285,6 +285,10 @@
 
 /* ── Filter bar above lists ── */
 .filters {
+  /* Its entrance animation makes it a stacking context; lift it above the
+     content that follows so its dropdowns (pickers, menus) aren't covered. */
+  position: relative;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

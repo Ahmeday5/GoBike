@@ -1,7 +1,38 @@
-import { Directive, TemplateRef, ViewContainerRef, effect, inject, input } from '@angular/core';
+import {
+  Directive,
+  TemplateRef,
+  ViewContainerRef,
+  computed,
+  effect,
+  inject,
+  input,
+  untracked,
+} from '@angular/core';
 import { AuthService } from '@core/auth/services/auth.service';
 
 type PermissionInput = string | ReadonlyArray<string>;
+
+/**
+ * Shows or hides the host template as `granted` flips. The view is created
+ * `untracked`: components inside it may read and write signals while they are
+ * built, and none of that may leak into this effect (it would throw NG0600 on
+ * writes, and re-create the whole view whenever a child's signal changed).
+ */
+function bindTemplate(granted: () => boolean): void {
+  const tpl = inject(TemplateRef);
+  const vcr = inject(ViewContainerRef);
+  let shown: boolean | null = null;
+
+  effect(() => {
+    const show = granted();
+    if (show === shown) return;
+    shown = show;
+    untracked(() => {
+      vcr.clear();
+      if (show) vcr.createEmbeddedView(tpl);
+    });
+  });
+}
 
 /**
  * Renders its host element only when the current user holds the specified
@@ -22,20 +53,16 @@ export class HasPermissionDirective {
   readonly appHasPermission = input.required<PermissionInput | null | undefined>();
 
   private readonly auth = inject(AuthService);
-  private readonly tpl = inject(TemplateRef);
-  private readonly vcr = inject(ViewContainerRef);
 
   constructor() {
-    effect(() => {
-      const required = this.appHasPermission();
-      const granted =
-        required == null || (Array.isArray(required) && required.length === 0)
+    bindTemplate(
+      computed(() => {
+        const required = this.appHasPermission();
+        return required == null || (Array.isArray(required) && required.length === 0)
           ? true
           : this.auth.hasPermission(required as string | readonly string[]);
-
-      this.vcr.clear();
-      if (granted) this.vcr.createEmbeddedView(this.tpl);
-    });
+      }),
+    );
   }
 }
 
@@ -53,17 +80,13 @@ export class HasAnyPermissionDirective {
   readonly appHasAnyPermission = input.required<ReadonlyArray<string> | null | undefined>();
 
   private readonly auth = inject(AuthService);
-  private readonly tpl = inject(TemplateRef);
-  private readonly vcr = inject(ViewContainerRef);
 
   constructor() {
-    effect(() => {
-      const required = this.appHasAnyPermission();
-      const granted =
-        !required || required.length === 0 ? true : this.auth.hasAnyPermission(required);
-
-      this.vcr.clear();
-      if (granted) this.vcr.createEmbeddedView(this.tpl);
-    });
+    bindTemplate(
+      computed(() => {
+        const required = this.appHasAnyPermission();
+        return !required || required.length === 0 ? true : this.auth.hasAnyPermission(required);
+      }),
+    );
   }
 }

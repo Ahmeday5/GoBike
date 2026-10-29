@@ -1,0 +1,217 @@
+<app-page-header
+  title="الصيانة والإصلاح"
+  subtitle="طابور إصلاح الموتوسيكلات المستلمة بأعطال وكل سجلات الصيانة"
+>
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Maintenance.Manage"
+    (click)="formOpen.set(true)"
+  >
+    <app-icon name="plus" [size]="16" />
+    سجل صيانة جديد
+  </button>
+</app-page-header>
+
+<div class="stats">
+  <button
+    type="button"
+    class="stat stat--button stat--danger"
+    style="--i: 0"
+    [class.stat--active]="view() === 'queue' && queueStatus() !== 'AwaitingSupervisorApproval'"
+    (click)="setQueue('InProgress')"
+  >
+    <span class="stat__icon"><app-icon name="wrench" [size]="20" /></span>
+    <span>
+      <span class="stat__value ltr">{{
+        counts() ? (counts()!.scheduled + counts()!.inProgress | num) : '—'
+      }}</span>
+      <span class="stat__label">إصلاحات مفتوحة</span>
+    </span>
+  </button>
+  <button
+    type="button"
+    class="stat stat--button"
+    style="--i: 1; --stat-fg: var(--pu); --stat-bg: var(--pu-l)"
+    [class.stat--active]="view() === 'queue' && queueStatus() === 'AwaitingSupervisorApproval'"
+    (click)="setQueue('AwaitingSupervisorApproval')"
+  >
+    <span class="stat__icon"><app-icon name="shield" [size]="20" /></span>
+    <span>
+      <span class="stat__value ltr">{{ counts() ? (counts()!.awaiting | num) : '—' }}</span>
+      <span class="stat__label">بانتظار اعتماد المشرف</span>
+    </span>
+  </button>
+  <div class="stat stat--warning" style="--i: 2">
+    <span class="stat__icon"><app-icon name="alert" [size]="20" /></span>
+    <span>
+      <span class="stat__value ltr">{{ counts() ? (counts()!.returned | num) : '—' }}</span>
+      <span class="stat__label">أعادها المشرف للفني</span>
+    </span>
+  </div>
+</div>
+
+<app-tabs [tabs]="viewTabs" [active]="view()" (activeChange)="setView($event)" />
+
+<div class="filters" role="search">
+  @if (view() === 'queue') {
+    <div class="mp-chips" role="group" aria-label="حالة الإصلاح">
+      @for (t of queueTabs(); track t.id) {
+        <button
+          type="button"
+          class="mp-chip"
+          [class.mp-chip--active]="t.id === queueStatus()"
+          [attr.aria-pressed]="t.id === queueStatus()"
+          (click)="setQueue(t.id)"
+        >
+          @if (t.icon) {
+            <app-icon [name]="t.icon" [size]="14" />
+          }
+          {{ t.label }}
+          @if (t.badge) {
+            <span class="mp-chip__badge ltr">{{ t.badge }}</span>
+          }
+        </button>
+      }
+    </div>
+  } @else {
+    <app-search-input
+      [value]="f().search"
+      (valueChange)="filters.patch({ search: $event })"
+      placeholder="ابحث برقم اللوحة أو الوصف أو الورشة…"
+    />
+    <select
+      class="form-select"
+      aria-label="الحالة"
+      [value]="f().status"
+      (change)="select('status', $event)"
+    >
+      <option value="">كل الحالات</option>
+      @for (o of statusOptions; track o.value) {
+        <option [value]="o.value">{{ o.label }}</option>
+      }
+    </select>
+    <select
+      class="form-select"
+      aria-label="النوع"
+      [value]="f().type"
+      (change)="select('type', $event)"
+    >
+      <option value="">كل الأنواع</option>
+      @for (o of typeOptions; track o.value) {
+        <option [value]="o.value">{{ o.label }}</option>
+      }
+    </select>
+  }
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  @if (f().motorcycleId) {
+    <app-chip tone="info" icon="bike">
+      الموتوسيكل <span class="ltr">{{ motorcyclePlate() }}</span>
+    </app-chip>
+  }
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (records.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="records.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="records.loading()"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="wrench"
+  [emptyTitle]="emptyTitle()"
+  [emptyText]="emptyText()"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="records.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-record-form-dialog
+  [open]="formOpen()"
+  [presetMotorcycle]="presetMotorcycle()"
+  (closed)="formOpen.set(false)"
+  (saved)="onCreated($event)"
+/>
+
+<ng-template #plateTpl let-r>
+  <div class="mp-plate">
+    <strong class="ltr">{{ r.plateNumber ?? '—' }}</strong>
+    @if (isReturned(r)) {
+      <span class="mp-returned" [title]="r.verificationRejectReason">
+        <app-icon name="alert" [size]="12" />
+        أعاده المشرف
+      </span>
+    } @else if (r.requiresSupervisorApproval) {
+      <span class="muted mp-sub">من فحص الاستلام</span>
+    }
+  </div>
+</ng-template>
+<ng-template #statusTpl let-r
+  ><app-enum-chip [map]="STATUS" [value]="r.status" [small]="true"
+/></ng-template>
+<ng-template #typeTpl let-r
+  ><app-enum-chip [map]="TYPE" [value]="r.type" [small]="true"
+/></ng-template>
+<ng-template #issueTpl let-r>
+  <span class="mp-issue" [title]="r.issueDescription ?? ''">{{ r.issueDescription || '—' }}</span>
+</ng-template>
+<ng-template #faultsTpl let-r>
+  @if (r.faults?.length) {
+    <span class="ltr">{{ fixedCount(r) }} / {{ r.faults.length }}</span>
+    <span class="muted mp-sub d-block">تم إصلاحها</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #dateTpl let-r>
+  @let at = r.reportedAtUtc ?? r.startedAtUtc ?? r.scheduledAtUtc ?? r.completedAtUtc;
+  @if (at) {
+    <span [title]="at | cairoDate">{{ at | cairoDate: 'relative' }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #costTpl let-r>
+  @if (total(r) > 0) {
+    <span class="amount">{{ total(r) | money }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>

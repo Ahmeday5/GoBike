@@ -190,5 +190,15 @@ export function isIncidentNotification(
   return n.relatedEntityType === 'GpsIncident' || INCIDENT_NOTIFICATION_TYPES.includes(n.type);
 }
 
+/** Incident types the "GPS & power" tab offers in its type filter (zone has its own tab). */
+export const NON_ZONE_INCIDENT_TYPES: readonly GpsIncidentType[] = [
+  'PowerDisconnected',
+  'SuspectedPowerDisconnect',
+  'DeviceOffline',
+  'NoRecentLocation',
+  'LowBattery',
+  'ProviderOutage',
+];
+
 export const SUSPECTED_POWER_HINT =
   'مشتبه: انقطع إرسال جهاز التتبع بينما كان المحرك يعمل — قد يكون فصلًا متعمدًا للكهرباء أو ضعفًا في الشبكة. يُغلق تلقائيًا عند عودة الإشارة.';

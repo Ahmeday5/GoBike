@@ -1,0 +1,101 @@
+<app-page-header
+  title="فواتير الإصلاح"
+  subtitle="فواتير الإصلاح الواردة من برنامج الحسابات — حدّد من يتحمّل كل فاتورة"
+/>
+
+<app-tabs [tabs]="tabs()" [active]="f().status" (activeChange)="setStatus($event)" />
+
+@if (canPickOffice() || f().motorcycleId) {
+  <div class="filters" role="search">
+    @if (canPickOffice()) {
+      <select
+        class="form-select"
+        aria-label="المكتب"
+        [value]="f().officeId"
+        (change)="selectOffice($event)"
+      >
+        <option value="">كل المكاتب</option>
+        @for (o of offices(); track o.id) {
+          <option [value]="o.id">{{ o.name }}</option>
+        }
+      </select>
+    }
+    @if (f().motorcycleId) {
+      <app-chip tone="info" icon="bike">
+        الموتوسيكل <span class="ltr">{{ motorcyclePlate() }}</span>
+      </app-chip>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearMotorcycle()">
+        <app-icon name="close" [size]="14" />
+        عرض الكل
+      </button>
+    }
+  </div>
+}
+
+@if (invoices.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="invoices.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="invoices.loading()"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="cash"
+  [emptyTitle]="emptyTitle()"
+  emptyText="تصل الفواتير تلقائيًا من برنامج الحسابات بعد إصلاح الموتوسيكلات."
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="invoices.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<ng-template #numberTpl let-i>
+  <strong class="ltr">{{ i.externalInvoiceNumber || '—' }}</strong>
+</ng-template>
+<ng-template #plateTpl let-i>
+  @if (i.motorcycleId) {
+    <a class="ltr" [routerLink]="ROUTES.motorcycle(i.motorcycleId)" (click)="stop($event)">{{
+      i.plateNumber ?? 'عرض'
+    }}</a>
+  } @else {
+    <span class="ltr">{{ i.plateNumber ?? '—' }}</span>
+  }
+</ng-template>
+<ng-template #amountTpl let-i
+  ><span class="amount">{{ i.amount | money }}</span></ng-template
+>
+<ng-template #issuedTpl let-i>{{ i.issuedAtUtc | cairoDate: 'date' }}</ng-template>
+<ng-template #driverTpl let-i>
+  @if (i.suggestedDriverId) {
+    <a [routerLink]="ROUTES.driver(i.suggestedDriverId)" (click)="stop($event)">{{
+      i.suggestedDriverName ?? 'عرض السائق'
+    }}</a>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #statusTpl let-i
+  ><app-enum-chip [map]="STATUS" [value]="i.status" [small]="true"
+/></ng-template>
+<ng-template #repairTpl let-i>
+  @if (i.maintenanceRecordId) {
+    <a [routerLink]="ROUTES.maintenanceRecord(i.maintenanceRecordId)" (click)="stop($event)">
+      <app-icon name="wrench" [size]="14" /> سجل الإصلاح
+    </a>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>

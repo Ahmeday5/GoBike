@@ -1,0 +1,196 @@
+<form class="tr" [formGroup]="form" novalidate (ngSubmit)="saveProgress()">
+  <section class="tr__block">
+    <h3 class="tr__title"><app-icon name="alert" [size]="16" /> الأعطال</h3>
+    <p class="form-hint tr__hint">
+      علِّم كل عطل تم إصلاحه. يمكنك إضافة أعطال اكتشفتها أثناء الإصلاح.
+    </p>
+    <app-faults-editor
+      [faults]="form.controls.faults"
+      [showFixed]="true"
+      idPrefix="tr-fault"
+      emptyHint="لا توجد أعطال مسجّلة. أضف ما اكتشفته أثناء الإصلاح."
+    />
+  </section>
+
+  <section class="tr__block">
+    <h3 class="tr__title">
+      <app-icon name="wrench" [size]="16" /> قطع الغيار <span class="muted">(اختياري)</span>
+    </h3>
+    @if (partRows().length) {
+      <div class="tw tr__parts">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">القطعة *</th>
+              <th scope="col">رقم القطعة</th>
+              <th scope="col">الكمية *</th>
+              <th scope="col">سعر الوحدة *</th>
+              <th scope="col">الإجمالي</th>
+              <th scope="col"><span class="visually-hidden">حذف</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of partRows(); track row; let i = $index) {
+              <tr [formGroup]="row">
+                <td>
+                  <label class="visually-hidden" [for]="'tr-part-name-' + i"
+                    >اسم القطعة {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'tr-part-name-' + i"
+                    class="form-control"
+                    formControlName="partName"
+                  />
+                  <app-form-error [control]="row.controls.partName" label="اسم القطعة" />
+                </td>
+                <td>
+                  <label class="visually-hidden" [for]="'tr-part-no-' + i"
+                    >رقم القطعة {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'tr-part-no-' + i"
+                    class="form-control"
+                    dir="ltr"
+                    formControlName="partNumber"
+                  />
+                </td>
+                <td class="tr__num">
+                  <label class="visually-hidden" [for]="'tr-part-qty-' + i"
+                    >الكمية {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'tr-part-qty-' + i"
+                    type="number"
+                    class="form-control"
+                    formControlName="quantity"
+                    min="0"
+                    step="1"
+                  />
+                  <app-form-error [control]="row.controls.quantity" label="الكمية" />
+                </td>
+                <td class="tr__num">
+                  <label class="visually-hidden" [for]="'tr-part-cost-' + i"
+                    >سعر الوحدة {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'tr-part-cost-' + i"
+                    type="number"
+                    class="form-control"
+                    formControlName="unitCost"
+                    min="0"
+                    step="0.01"
+                  />
+                  <app-form-error [control]="row.controls.unitCost" label="سعر الوحدة" />
+                </td>
+                <td class="tr__line">
+                  <span class="amount">{{ totals().lines[i] | money }}</span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm tr__remove"
+                    [attr.aria-label]="'حذف القطعة ' + (i + 1)"
+                    (click)="removePart(i)"
+                  >
+                    <app-icon name="trash" [size]="15" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="tr__empty">لم تُستخدم قطع غيار. أضف القطع فقط إذا احتاج الإصلاح لها.</p>
+    }
+    <button type="button" class="btn btn-sm tr__add" (click)="addPart()">
+      <app-icon name="plus" [size]="14" />
+      إضافة قطعة
+    </button>
+  </section>
+
+  <section class="tr__block">
+    <h3 class="tr__title"><app-icon name="file" [size]="16" /> العمل المنفّذ والتكلفة</h3>
+    <div class="form-grid">
+      <div class="span-2">
+        <label class="form-label" for="tr-work">الأعمال المنفذة</label>
+        <textarea
+          id="tr-work"
+          class="form-control"
+          rows="3"
+          formControlName="workPerformed"
+          placeholder="مثال: تغيير المرآة اليمنى وضبط الفرامل الأمامية"
+        ></textarea>
+        <app-form-error [control]="form.controls.workPerformed" label="الأعمال المنفذة" />
+      </div>
+      <div>
+        <label class="form-label" for="tr-tech">الفني</label>
+        <input id="tr-tech" class="form-control" formControlName="technician" />
+        <app-form-error [control]="form.controls.technician" label="الفني" />
+      </div>
+      <div></div>
+      <div>
+        <label class="form-label" for="tr-labor">المصنعية (ج.م)</label>
+        <input
+          id="tr-labor"
+          type="number"
+          class="form-control"
+          formControlName="laborCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.laborCost" label="المصنعية" />
+      </div>
+      <div>
+        <label class="form-label" for="tr-other">تكاليف أخرى (ج.م)</label>
+        <input
+          id="tr-other"
+          type="number"
+          class="form-control"
+          formControlName="otherCost"
+          min="0"
+          step="0.01"
+        />
+        <app-form-error [control]="form.controls.otherCost" label="تكاليف أخرى" />
+      </div>
+    </div>
+
+    <dl class="tr__totals" aria-live="polite">
+      <div>
+        <dt>قطع الغيار</dt>
+        <dd class="amount">{{ totals().parts | money }}</dd>
+      </div>
+      <div>
+        <dt>المصنعية</dt>
+        <dd class="amount">{{ totals().labor | money }}</dd>
+      </div>
+      <div>
+        <dt>أخرى</dt>
+        <dd class="amount">{{ totals().other | money }}</dd>
+      </div>
+      <div class="tr__grand">
+        <dt>الإجمالي</dt>
+        <dd class="amount">{{ totals().total | money }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <div class="tr__actions">
+    <button type="submit" class="btn" [disabled]="!!saving()">
+      @if (saving() === 'progress') {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      } @else {
+        <app-icon name="check" [size]="16" />
+      }
+      حفظ التقدم
+    </button>
+    <button type="button" class="btn btn-gr" [disabled]="!!saving()" (click)="markDone()">
+      @if (saving() === 'done') {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      } @else {
+        <app-icon name="send" [size]="16" />
+      }
+      تم الإصلاح ← إرسال للمشرف
+    </button>
+  </div>
+</form>

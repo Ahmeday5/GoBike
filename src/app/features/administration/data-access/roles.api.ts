@@ -16,8 +16,10 @@ import {
 export class RolesApi {
   private readonly api = inject(ApiService);
 
-  list(): Observable<RoleView[]> {
-    return this.api.get<unknown>('roles', { context: withSkipLoader() }).pipe(
+  /** `silent` for pickers that can fall back to the seeded roles (no error toast). */
+  list(silent = false): Observable<RoleView[]> {
+    const context = silent ? withSilentErrors(withSkipLoader()) : withSkipLoader();
+    return this.api.get<unknown>('roles', { context }).pipe(
       map((r) =>
         asList<unknown>(r)
           .map(normalizeRole)

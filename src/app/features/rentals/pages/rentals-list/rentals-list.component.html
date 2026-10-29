@@ -1,0 +1,251 @@
+<app-page-header title="الإيجارات" [subtitle]="subtitle()">
+  <button
+    type="button"
+    class="btn btn-brand"
+    *appHasPermission="P.Assignments.Manage"
+    (click)="startOpen.set(true)"
+  >
+    <app-icon name="plus" [size]="16" />
+    بدء إيجار
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث برقم اللوحة أو اسم السائق أو رقم العقد…"
+  />
+
+  <select
+    class="form-select"
+    aria-label="الحالة"
+    [value]="f().status"
+    (change)="select('status', $event)"
+  >
+    <option value="">كل الحالات</option>
+    @for (o of statusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  @if (canPickOffice()) {
+    <select
+      class="form-select"
+      aria-label="المكتب"
+      [value]="f().officeId"
+      (change)="select('officeId', $event)"
+    >
+      <option value="">كل المكاتب</option>
+      @for (o of offices(); track o.id) {
+        <option [value]="o.id">{{ o.name }}</option>
+      }
+    </select>
+  }
+
+  <label class="rl-date">
+    <span>من</span>
+    <input
+      type="date"
+      class="form-control"
+      aria-label="من تاريخ"
+      [value]="f().from"
+      [max]="f().to || null"
+      (change)="select('from', $event)"
+    />
+  </label>
+  <label class="rl-date">
+    <span>إلى</span>
+    <input
+      type="date"
+      class="form-control"
+      aria-label="إلى تاريخ"
+      [value]="f().to"
+      [min]="f().from || null"
+      (change)="select('to', $event)"
+    />
+  </label>
+
+  @for (c of scopeChips(); track c.key) {
+    <button
+      type="button"
+      class="rl-scope"
+      [attr.aria-label]="'إزالة فلتر ' + c.label"
+      (click)="clearScope(c.key)"
+    >
+      <app-icon [name]="c.icon" [size]="14" />
+      <span>{{ c.label }}</span>
+      <app-icon name="close" [size]="12" />
+    </button>
+  }
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (rentals.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="rentals.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="rentals.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  [rowClickable]="true"
+  (rowClick)="open($event)"
+  emptyIcon="route"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا توجد إيجارات بعد'"
+  [emptyText]="hasFilters() ? 'جرّب تغيير كلمات البحث أو الفلاتر' : ''"
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="rentals.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-start-rental-dialog
+  [open]="startOpen()"
+  (closed)="startOpen.set(false)"
+  (started)="onStarted($event)"
+/>
+<app-return-rental-dialog
+  [open]="!!returning()"
+  [rental]="returning()"
+  (closed)="returning.set(null)"
+  (returned)="onReturned()"
+/>
+<app-cancel-rental-dialog
+  [open]="!!cancelling()"
+  [rental]="cancelling()"
+  (closed)="cancelling.set(null)"
+  (cancelled)="onCancelled()"
+/>
+<app-rental-terms-dialog
+  [open]="!!editing()"
+  [rental]="editing()"
+  (closed)="editing.set(null)"
+  (saved)="onTermsSaved()"
+/>
+
+<!-- Links and buttons inside a clickable row stop the click from also opening the rental. -->
+<ng-template #plateTpl let-r>
+  @if (can().motorcycles) {
+    <a
+      class="link-btn ltr"
+      [routerLink]="motorcycleLink(r.motorcycleId)"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+    >
+      {{ r.plateNumber || '—' }}
+    </a>
+  } @else {
+    <strong class="ltr">{{ r.plateNumber || '—' }}</strong>
+  }
+  @if (canPickOffice() && r.officeName) {
+    <div class="muted rl-sub">{{ r.officeName }}</div>
+  }
+</ng-template>
+<ng-template #driverTpl let-r>
+  @if (can().drivers) {
+    <a
+      class="link-btn"
+      [routerLink]="driverLink(r.driverId)"
+      (click)="$event.stopPropagation()"
+      (keydown.enter)="$event.stopPropagation()"
+    >
+      {{ r.driverName || '—' }}
+    </a>
+  } @else {
+    <strong>{{ r.driverName || '—' }}</strong>
+  }
+  @if (r.driverPhone) {
+    <div class="muted ltr rl-sub">{{ r.driverPhone }}</div>
+  }
+</ng-template>
+<ng-template #statusTpl let-r>
+  <app-enum-chip [map]="STATUS" [value]="r.status" [small]="true" />
+</ng-template>
+<ng-template #startTpl let-r>{{ r.startAtUtc | cairoDate }}</ng-template>
+<ng-template #endTpl let-r>
+  @if (r.endAtUtc) {
+    {{ r.endAtUtc | cairoDate }}
+  } @else {
+    <span class="muted">{{ r.status === 'Active' ? 'سارٍ حتى الآن' : '—' }}</span>
+  }
+</ng-template>
+<ng-template #rentTpl let-r>
+  <span class="amount">{{ r.rentAmount | money }}</span>
+  <div class="muted rl-sub">{{ periodLabel(r.rentPeriod) }}</div>
+</ng-template>
+<ng-template #depositTpl let-r>
+  <span class="amount">{{ r.depositAmount | money }}</span>
+</ng-template>
+<ng-template #contractTpl let-r>
+  @if (r.contractNumber) {
+    <span class="ltr">{{ r.contractNumber }}</span>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #actionsTpl let-r>
+  @if (r.status === 'Active') {
+    <div class="rl-actions">
+      @if (can().inspect) {
+        <button
+          type="button"
+          class="btn btn-sm btn-brand"
+          (click)="$event.stopPropagation(); returning.set(r)"
+          (keydown.enter)="$event.stopPropagation()"
+          (keydown.space)="$event.stopPropagation()"
+        >
+          <app-icon name="check-circle" [size]="14" />
+          استلام
+        </button>
+      }
+      @if (can().manage) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          title="تعديل الشروط"
+          aria-label="تعديل الشروط"
+          (click)="$event.stopPropagation(); editing.set(r)"
+          (keydown.enter)="$event.stopPropagation()"
+          (keydown.space)="$event.stopPropagation()"
+        >
+          <app-icon name="edit" [size]="14" />
+        </button>
+        @if (cancellable(r)) {
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost rl-danger"
+            title="إلغاء الإيجار"
+            aria-label="إلغاء الإيجار"
+            (click)="$event.stopPropagation(); cancelling.set(r)"
+            (keydown.enter)="$event.stopPropagation()"
+            (keydown.space)="$event.stopPropagation()"
+          >
+            <app-icon name="ban" [size]="14" />
+          </button>
+        }
+      }
+    </div>
+  }
+</ng-template>

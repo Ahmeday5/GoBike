@@ -31,7 +31,12 @@ import { RentalsApi } from '../../data-access/rentals.api';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, ModalComponent, FormErrorComponent, IconComponent, CairoDatePipe],
   template: `
-    <app-modal [open]="open()" title="إلغاء الإيجار" titleColorClass="text-danger" (closed)="closed.emit()">
+    <app-modal
+      [open]="open()"
+      title="إلغاء الإيجار"
+      titleColorClass="text-danger"
+      (closed)="closed.emit()"
+    >
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <p class="cr-text">
           الإلغاء يعني أن الإيجار لم يتم فعليًا (خطأ في التسجيل مثلًا)، وتعود الموتوسيكل
@@ -112,6 +117,8 @@ export class CancelRentalDialogComponent {
   protected async submit(): Promise<void> {
     const r = this.rental();
     if (!r) return;
+    const reason = this.form.controls.reason;
+    if (!reason.value.trim()) reason.setErrors({ required: true });
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -128,7 +135,7 @@ export class CancelRentalDialogComponent {
     if (!ok) return;
 
     this.saving.set(true);
-    this.api.cancel(r.id, { reason: this.form.controls.reason.value.trim() }).subscribe({
+    this.api.cancel(r.id, { reason: reason.value.trim() }).subscribe({
       next: () => {
         this.saving.set(false);
         this.toast.success('تم إلغاء الإيجار');

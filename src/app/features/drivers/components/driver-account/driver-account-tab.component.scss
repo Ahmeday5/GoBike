@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+
+.acc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.acc__body {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) 2fr;
+  gap: 1rem;
+  align-items: stretch;
+  transition: opacity var(--dur-2);
+}
+.acc__body--busy {
+  opacity: 0.6;
+}
+
+// The number that matters: big, and red (plus an icon + text) when the driver owes.
+.acc__hero {
+  display: grid;
+  align-content: center;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--gr);
+  border-inline-start-width: 0.3rem;
+  border-radius: var(--rl);
+  background: var(--gr-l);
+  color: var(--gr);
+}
+.acc__hero--debt {
+  border-color: var(--re);
+  background: var(--re-l);
+  color: var(--re);
+}
+.acc__hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.acc__hero-value {
+  font-size: calc(var(--fs-2xl) * 1.15);
+  line-height: 1.2;
+  justify-self: start;
+}
+.acc__hero-sub {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.acc__figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+.acc__fig {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--brd);
+  border-radius: var(--rl);
+  background: var(--bg3);
+
+  dt {
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--txt3);
+  }
+  dd {
+    margin: 0;
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    justify-self: start;
+  }
+}
+.acc__fig--credit {
+  border-color: var(--gr);
+  background: var(--gr-l);
+}
+.acc__fig-note {
+  font-size: var(--fs-xs);
+  color: var(--gr);
+}
+
+.acc__skeleton-hero {
+  height: 6.5rem;
+  border-radius: var(--rl);
+}
+.acc__skeleton-fig {
+  height: 4.5rem;
+  border-radius: var(--rl);
+}
+
+@media (max-width: 767.98px) {
+  .acc__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .acc {
+    box-shadow: none;
+    animation: none;
+  }
+  .acc__body {
+    grid-template-columns: 1fr 2fr;
+    opacity: 1;
+  }
+  .acc__hero,
+  .acc__fig {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

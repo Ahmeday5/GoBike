@@ -48,6 +48,11 @@ export interface GpsDeviceDto {
   isStale?: boolean | null;
   linkedAtUtc?: string | null;
   createdAtUtc?: string | null;
+  batteryLevel?: number | null;
+  batteryPercent?: number | null;
+  batteryPercentage?: number | null;
+  model?: string | null;
+  deviceModel?: string | null;
 }
 
 export const deviceName = (d: GpsDeviceDto): string | null => d.deviceName ?? d.name ?? null;
@@ -57,6 +62,13 @@ export const deviceConnectivity = (d: GpsDeviceDto): string | null =>
   d.connectivity ?? d.connectivityStatus ?? null;
 export const deviceLastSeen = (d: GpsDeviceDto): string | null =>
   d.lastSeenAtUtc ?? d.lastFixAtUtc ?? d.lastLocationAtUtc ?? null;
+export const deviceModel = (d: GpsDeviceDto): string | null => d.model ?? d.deviceModel ?? null;
+/** Battery in % (0–100) when the API reports one. */
+export const deviceBattery = (d: GpsDeviceDto): number | null => {
+  const v = d.batteryLevel ?? d.batteryPercent ?? d.batteryPercentage;
+  return typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null;
+};
+export const isLinked = (d: GpsDeviceDto): boolean => !!d.motorcycleId;
 
 /** `POST /gps/devices` (Swagger: RegisterGpsDeviceRequest). */
 export interface RegisterGpsDeviceRequest {

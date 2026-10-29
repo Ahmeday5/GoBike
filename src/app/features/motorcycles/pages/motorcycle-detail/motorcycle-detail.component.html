@@ -1,0 +1,224 @@
+@if (notFound()) {
+  <app-page-header title="تفاصيل الموتوسيكل" [backLink]="listLink" />
+  <div class="panel">
+    <app-empty-state
+      icon="bike"
+      title="الموتوسيكل غير موجود"
+      text="ربما حُذف هذا الموتوسيكل أو يتبع مكتبًا آخر."
+    />
+  </div>
+} @else {
+  <app-page-header
+    [title]="motorcycle()?.plateNumber ?? 'تفاصيل الموتوسيكل'"
+    [subtitle]="motorcycle() ? motorcycle()!.brand + ' ' + motorcycle()!.model : ''"
+    [backLink]="listLink"
+  >
+    @if (motorcycle(); as m) {
+      <div class="md-actions">
+        <button
+          type="button"
+          class="btn"
+          *appHasPermission="P.Motorcycles.Manage"
+          (click)="editOpen.set(true)"
+        >
+          <app-icon name="edit" [size]="16" />
+          تعديل
+        </button>
+        <button
+          type="button"
+          class="btn"
+          *appHasPermission="P.Motorcycles.ChangeStatus"
+          [title]="canChangeStatus() ? '' : 'لا توجد حالات متاحة للتغيير يدويًا الآن'"
+          (click)="statusOpen.set(true)"
+        >
+          <app-icon name="shield" [size]="16" />
+          تغيير الحالة
+        </button>
+        <button
+          type="button"
+          class="btn"
+          *appHasPermission="P.Motorcycles.Transfer"
+          (click)="transferOpen.set(true)"
+        >
+          <app-icon name="building" [size]="16" />
+          نقل لمكتب
+        </button>
+        <a class="btn" *appHasPermission="P.Motorcycles.Zone" [routerLink]="R.motorcycleZone(m.id)">
+          <app-icon name="target" [size]="16" />
+          {{ overview()?.zone ? 'تعديل النطاق' : 'تحديد النطاق' }}
+        </a>
+        <button
+          type="button"
+          class="btn"
+          *appHasPermission="P.Maintenance.Manage"
+          (click)="baselineOpen.set(true)"
+        >
+          <app-icon name="droplet" [size]="16" />
+          ضبط عداد الزيت
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost md-actions__danger"
+          *appHasPermission="P.Motorcycles.Manage"
+          (click)="remove()"
+        >
+          <app-icon name="trash" [size]="16" />
+          حذف
+        </button>
+      </div>
+    }
+  </app-page-header>
+
+  @if (overviewRes.initialLoading()) {
+    <div class="panel md-hero" aria-busy="true">
+      <span class="skeleton md-hero__avatar"></span>
+      <div class="md-hero__body">
+        <span class="skeleton" style="width: 14rem; height: 1.25rem"></span>
+        <span class="skeleton" style="width: 22rem; max-width: 100%; height: 0.875rem"></span>
+      </div>
+    </div>
+    <div class="md-skel-grid" aria-hidden="true">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <span class="skeleton md-skel-grid__item"></span>
+      }
+    </div>
+  } @else if (loadFailed() && !overview()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ overviewRes.error()?.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="overviewRes.reload()">
+        إعادة المحاولة
+      </button>
+    </div>
+  } @else if (overview()) {
+    @let o = overview()!;
+    @let m = o.motorcycle;
+    @if (loadFailed()) {
+      <div
+        class="alert alert-warning d-flex justify-content-between align-items-center"
+        role="alert"
+      >
+        <span>تعذّر تحديث البيانات: {{ overviewRes.error()?.message }}</span>
+        <button type="button" class="btn btn-sm" (click)="overviewRes.reload()">
+          إعادة المحاولة
+        </button>
+      </div>
+    }
+    <section class="panel md-hero" [class.md-hero--red]="health() === 'Red'">
+      <span class="md-hero__avatar" aria-hidden="true"><app-icon name="bike" [size]="28" /></span>
+      <div class="md-hero__body">
+        <div class="md-hero__chips">
+          <app-enum-chip [map]="STATUS" [value]="m.status" />
+          @if (health()) {
+            <app-enum-chip [map]="HEALTH" [value]="health()" />
+          }
+          @if (o.zone?.isOutside && o.zone?.isActive !== false) {
+            <app-chip tone="danger" icon="target">خارج النطاق</app-chip>
+          }
+          @if (!o.location) {
+            <app-chip tone="neutral" icon="wifi-off">بدون جهاز تتبع</app-chip>
+          } @else if (o.location.isStale) {
+            <app-chip tone="warning" icon="clock">إشارة قديمة</app-chip>
+          } @else if (o.location.connectivity && o.location.connectivity !== 'Online') {
+            <app-enum-chip [map]="CONNECTIVITY" [value]="o.location.connectivity" />
+          }
+          @if (o.oilStatus?.currentLevel === 'Overdue') {
+            <app-chip tone="danger" icon="droplet">تجاوز موعد تغيير الزيت</app-chip>
+          }
+        </div>
+        <ul class="md-hero__meta">
+          @if (m.internalCode) {
+            <li><app-icon name="key" [size]="14" />{{ m.internalCode }}</li>
+          }
+          <li><app-icon name="building" [size]="14" />{{ m.officeName ?? '—' }}</li>
+          @if (o.currentRental; as r) {
+            <li>
+              <app-icon name="user" [size]="14" />
+              @if (r.driverId) {
+                <a class="link-btn" [routerLink]="R.driver(r.driverId)">{{
+                  r.driverName ?? 'السائق'
+                }}</a>
+              } @else {
+                {{ r.driverName ?? '—' }}
+              }
+            </li>
+          }
+          @if (o.location) {
+            <li>
+              <app-icon name="clock" [size]="14" />
+              آخر إشارة: {{ lastSeen() | cairoDate: 'relative' }}
+            </li>
+          }
+          @if ((o.oilStatus?.kmSinceOilChange ?? null) !== null) {
+            <li>
+              <app-icon name="droplet" [size]="14" />
+              منذ تغيير الزيت: {{ o.oilStatus?.kmSinceOilChange | km }}
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <app-tabs [tabs]="tabs()" [active]="activeTab()" (activeChange)="setTab($event)" />
+
+    <div class="md-tab">
+      @switch (activeTab()) {
+        @case ('overview') {
+          <app-motorcycle-overview-tab [overview]="o" />
+        }
+        @case ('route') {
+          <app-motorcycle-route-tab [motorcycleId]="id()" />
+        }
+        @case ('alarms') {
+          <app-motorcycle-alarms-tab [motorcycleId]="id()" />
+        }
+        @case ('maintenance') {
+          <app-motorcycle-maintenance-tab [motorcycleId]="id()" />
+        }
+        @case ('rentals') {
+          <app-motorcycle-rentals-tab [motorcycleId]="id()" />
+        }
+        @case ('status') {
+          <app-motorcycle-status-history-tab [motorcycleId]="id()" />
+        }
+        @case ('transfers') {
+          <app-motorcycle-transfers-tab [motorcycleId]="id()" />
+        }
+        @case ('documents') {
+          <section class="panel">
+            <app-documents-panel ownerType="Motorcycle" [ownerId]="id()" />
+          </section>
+        }
+        @case ('mileage') {
+          <app-motorcycle-mileage-tab [motorcycleId]="id()" />
+        }
+      }
+    </div>
+  }
+}
+
+<app-motorcycle-form-dialog
+  [open]="editOpen()"
+  [motorcycle]="motorcycle()"
+  (closed)="editOpen.set(false)"
+  (saved)="onSaved()"
+  (conflict)="onConflict()"
+/>
+<app-motorcycle-status-dialog
+  [open]="statusOpen()"
+  [motorcycle]="motorcycle()"
+  (closed)="statusOpen.set(false)"
+  (saved)="onSaved()"
+/>
+<app-motorcycle-transfer-dialog
+  [open]="transferOpen()"
+  [motorcycle]="motorcycle()"
+  (closed)="transferOpen.set(false)"
+  (saved)="onSaved()"
+/>
+<app-oil-baseline-dialog
+  [open]="baselineOpen()"
+  [motorcycleId]="id()"
+  [currentOdometerKm]="overview()?.location?.odometerKm ?? null"
+  (closed)="baselineOpen.set(false)"
+  (saved)="onSaved()"
+/>

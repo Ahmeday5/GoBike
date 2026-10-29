@@ -1,0 +1,107 @@
+@if (notFound()) {
+  <app-page-header title="تقرير فحص الاستلام" [backLink]="listLink" />
+  <div class="panel">
+    <app-empty-state
+      icon="search"
+      title="الفحص غير موجود"
+      text="ربما حُذف هذا الفحص أو يتبع مكتبًا آخر."
+    />
+  </div>
+} @else {
+  <app-page-header
+    [title]="
+      inspection()?.plateNumber ? 'فحص استلام ' + inspection()?.plateNumber : 'تقرير فحص الاستلام'
+    "
+    [subtitle]="inspection()?.driverName ? 'عند العودة من السائق ' + inspection()?.driverName : ''"
+    [backLink]="listLink"
+  >
+    @if (links().rental; as link) {
+      <a class="btn" [routerLink]="link">
+        <app-icon name="route" [size]="16" />
+        عرض الإيجار
+      </a>
+    }
+  </app-page-header>
+
+  @if (res.initialLoading()) {
+    <div class="panel rd-hero" aria-busy="true">
+      <span class="skeleton rd-hero__icon"></span>
+      <div class="rd-hero__body">
+        <span class="skeleton" style="width: 10rem; height: 1.25rem"></span>
+        <span class="skeleton" style="width: 22rem; max-width: 100%; height: 0.875rem"></span>
+      </div>
+    </div>
+    <div class="panel" aria-busy="true">
+      <div class="rd-skel-kv">
+        @for (k of [0, 1, 2, 3]; track k) {
+          <span class="skeleton" style="height: 2.25rem"></span>
+        }
+      </div>
+    </div>
+  } @else if (loadFailed() && !inspection()) {
+    <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+      <span>{{ res.error()?.message }}</span>
+      <button type="button" class="btn btn-sm" (click)="res.reload()">إعادة المحاولة</button>
+    </div>
+  } @else {
+    @if (inspection(); as i) {
+      <section
+        class="panel rd-hero"
+        [class.rd-hero--cancelled]="i.result === 'HasFaults'"
+        [class.rd-hero--ok]="i.result === 'Ok'"
+      >
+        <span class="rd-hero__icon" aria-hidden="true">
+          <app-icon [name]="i.result === 'HasFaults' ? 'alert' : 'check-circle'" [size]="28" />
+        </span>
+        <div class="rd-hero__body">
+          <div class="rd-hero__chips">
+            <app-enum-chip [map]="RESULT" [value]="i.result" />
+          </div>
+          <ul class="rd-hero__meta">
+            <li>
+              <app-icon name="bike" [size]="14" />
+              @if (links().motorcycle; as link) {
+                <a class="link-btn ltr" [routerLink]="link">{{
+                  i.plateNumber || 'عرض الموتوسيكل'
+                }}</a>
+              } @else {
+                <span class="ltr">{{ i.plateNumber || '—' }}</span>
+              }
+            </li>
+            <li>
+              <app-icon name="user" [size]="14" />
+              @if (links().driver; as link) {
+                <a class="link-btn" [routerLink]="link">{{ i.driverName || 'عرض السائق' }}</a>
+              } @else {
+                <span>{{ i.driverName || '—' }}</span>
+              }
+            </li>
+            <li>
+              <app-icon name="calendar" [size]="14" />
+              {{ i.returnedAtUtc ?? i.inspectedAtUtc | cairoDate }}
+            </li>
+            @if (links().rental; as link) {
+              <li>
+                <app-icon name="route" [size]="14" />
+                <a class="link-btn" [routerLink]="link">الإيجار المرتبط</a>
+              </li>
+            }
+            @if (links().repair; as link) {
+              <li>
+                <app-icon name="wrench" [size]="14" />
+                <a class="link-btn" [routerLink]="link">سجل الإصلاح</a>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" style="--i: 1">
+        <header class="panel__head">
+          <h2 class="panel__title"><app-icon name="search" [size]="18" />نتيجة الفحص</h2>
+        </header>
+        <app-inspection-report [inspection]="i" />
+      </section>
+    }
+  }
+}

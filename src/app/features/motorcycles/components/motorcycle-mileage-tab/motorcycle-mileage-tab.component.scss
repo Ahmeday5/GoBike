@@ -1,0 +1,86 @@
+.mi-field {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+}
+.mi-label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--txt2);
+}
+.mi-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem;
+}
+.mi-busy {
+  opacity: 0.75;
+  transition: opacity var(--dur-2);
+}
+.mi-host {
+  position: relative;
+  min-height: 4rem;
+}
+.mi-svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--font-base);
+}
+.mi-grid {
+  stroke: var(--brd);
+  stroke-width: 1;
+}
+.mi-baseline {
+  stroke: var(--brd2);
+  stroke-width: 1;
+}
+.mi-axis {
+  fill: var(--txt3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.mi-axis--avg {
+  fill: var(--txt2);
+  font-weight: 600;
+}
+.mi-avg {
+  stroke: var(--txt2);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+.mi-bar {
+  fill: var(--primary);
+  transition: opacity var(--dur-2);
+}
+.mi-bar--dim {
+  opacity: 0.45;
+}
+.mi-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+.mi-tip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--brd);
+  border-radius: var(--r);
+  background: var(--bg2);
+  box-shadow: var(--shadow-md);
+  color: var(--txt);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 8px));
+}
+.mi-tip__date {
+  font-size: var(--fs-xs);
+  color: var(--txt3);
+}
+.mi-table {
+  max-height: 24rem;
+  overflow-y: auto;
+}

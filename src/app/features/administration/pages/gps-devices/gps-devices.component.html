@@ -1,0 +1,204 @@
+<app-page-header
+  title="أجهزة التتبع"
+  subtitle="تسجيل أجهزة GPS وربطها بالموتوسيكلات ومتابعة اتصالها"
+>
+  <button type="button" class="btn btn-brand" (click)="openCreate()">
+    <app-icon name="plus" [size]="16" />
+    تسجيل جهاز
+  </button>
+</app-page-header>
+
+<div class="filters" role="search">
+  <app-search-input
+    [value]="f().search"
+    (valueChange)="filters.patch({ search: $event })"
+    placeholder="ابحث برقم IMEI أو الاسم أو اللوحة…"
+  />
+  <select
+    class="form-select"
+    aria-label="الربط"
+    [value]="f().isLinked"
+    (change)="select('isLinked', $event)"
+  >
+    <option value="">كل الأجهزة</option>
+    <option value="true">مربوطة بموتوسيكل</option>
+    <option value="false">غير مربوطة</option>
+  </select>
+  <select
+    class="form-select"
+    aria-label="الاتصال"
+    [value]="f().connectivity"
+    (change)="select('connectivity', $event)"
+  >
+    <option value="">كل حالات الاتصال</option>
+    @for (o of connectivityOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+  <select
+    class="form-select"
+    aria-label="التفعيل"
+    [value]="f().isActive"
+    (change)="select('isActive', $event)"
+  >
+    <option value="">مفعّلة وموقوفة</option>
+    <option value="true">مفعّلة</option>
+    <option value="false">موقوفة</option>
+  </select>
+  <div class="form-check form-switch gd-stale">
+    <input
+      id="gd-stale"
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      [checked]="f().staleOnly"
+      (change)="filters.patch({ staleOnly: $any($event.target).checked })"
+    />
+    <label class="form-check-label" for="gd-stale">بلا إشارة حديثة فقط</label>
+  </div>
+
+  <span class="filters__spacer"></span>
+  @if (hasFilters()) {
+    <button type="button" class="btn btn-ghost btn-sm" (click)="filters.reset()">
+      <app-icon name="close" [size]="14" />
+      مسح الفلاتر
+    </button>
+  }
+</div>
+
+@if (devices.error(); as err) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+    <span>{{ err.message }}</span>
+    <button type="button" class="btn btn-sm" (click)="devices.reload()">إعادة المحاولة</button>
+  </div>
+}
+
+<app-data-table
+  [columns]="columns()"
+  [data]="rows()"
+  [loading]="devices.loading()"
+  [sortBy]="f().sortBy"
+  [sortDesc]="f().sortDesc"
+  (sortChange)="sort($event)"
+  emptyIcon="map-pin"
+  [emptyTitle]="hasFilters() ? 'لا توجد نتائج مطابقة' : 'لا توجد أجهزة تتبع مسجلة'"
+  [emptyText]="
+    hasFilters()
+      ? 'جرّب تغيير كلمات البحث أو الفلاتر'
+      : 'سجّل الجهاز برقم IMEI ثم اربطه بالموتوسيكل.'
+  "
+/>
+
+@if (page(); as p) {
+  <app-pagination
+    [pageIndex]="f().pageIndex"
+    [pageSize]="f().pageSize"
+    [count]="p.count"
+    [totalPages]="p.totalPages"
+    [disabled]="devices.loading()"
+    (pageChange)="filters.patch({ pageIndex: $event })"
+    (pageSizeChange)="filters.patch({ pageSize: $event })"
+  />
+}
+
+<app-gps-device-form-dialog
+  [open]="formOpen()"
+  [device]="editing()"
+  (closed)="closeForm()"
+  (saved)="onSaved()"
+/>
+<app-gps-link-dialog [device]="linking()" (closed)="linking.set(null)" (linked)="onLinked()" />
+
+<ng-template #deviceTpl let-d>
+  <div class="gd-device" [class.gd-device--off]="d.isActive === false">
+    <strong class="ltr">{{ d.imei }}</strong>
+    @if (name(d) || model(d)) {
+      <span class="muted gd-device__sub">
+        {{ name(d) }}
+        @if (name(d) && model(d)) {
+          ·
+        }
+        {{ model(d) }}
+      </span>
+    }
+    @if (d.isActive === false) {
+      <app-chip tone="neutral" icon="pause" [small]="true">موقوف</app-chip>
+    }
+  </div>
+</ng-template>
+<ng-template #bikeTpl let-d>
+  @if (d.motorcycleId) {
+    <a class="gd-bike ltr" [routerLink]="motorcycleLink(d.motorcycleId)">
+      <app-icon name="bike" [size]="14" />
+      {{ plate(d) || 'عرض الموتوسيكل' }}
+    </a>
+  } @else {
+    <app-chip tone="neutral" icon="minus-circle" [small]="true">غير مربوط</app-chip>
+  }
+</ng-template>
+<ng-template #connTpl let-d>
+  <div class="gd-conn">
+    @if (connectivity(d)) {
+      <app-enum-chip [map]="CONNECTIVITY" [value]="connectivity(d)" [small]="true" />
+    } @else {
+      <span class="muted">—</span>
+    }
+    @if (d.isStale) {
+      <app-chip tone="warning" icon="clock" [small]="true">إشارة قديمة</app-chip>
+    }
+  </div>
+</ng-template>
+<ng-template #seenTpl let-d>
+  @if (lastSeen(d); as seen) {
+    <span [title]="seen | cairoDate">{{ seen | cairoDate: 'relative' }}</span>
+  } @else {
+    <span class="muted">لم تصل إشارة</span>
+  }
+</ng-template>
+<ng-template #batteryTpl let-d>
+  @if (battery(d); as b) {
+    <app-chip [tone]="batteryTone(b)" icon="battery" [small]="true"
+      ><span class="ltr">{{ b }}%</span></app-chip
+    >
+  } @else if (battery(d) === 0) {
+    <app-chip tone="danger" icon="battery" [small]="true"><span class="ltr">0%</span></app-chip>
+  } @else {
+    <span class="muted">—</span>
+  }
+</ng-template>
+<ng-template #actionsTpl let-d>
+  <div class="ra">
+    <button
+      type="button"
+      class="ra__btn"
+      title="تعديل"
+      aria-label="تعديل الجهاز"
+      (click)="openEdit(d)"
+    >
+      <app-icon name="edit" [size]="16" />
+    </button>
+    @if (d.motorcycleId) {
+      <button
+        type="button"
+        class="ra__btn ra__btn--warn"
+        title="فصل عن الموتوسيكل"
+        aria-label="فصل الجهاز عن الموتوسيكل"
+        [disabled]="busyId() === d.id"
+        (click)="unlink(d)"
+      >
+        <app-icon name="close" [size]="16" />
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="btn btn-sm"
+        [disabled]="d.isActive === false"
+        [title]="d.isActive === false ? 'فعّل الجهاز أولًا' : 'ربط بموتوسيكل'"
+        (click)="linking.set(d)"
+      >
+        <app-icon name="bike" [size]="14" />
+        ربط
+      </button>
+    }
+  </div>
+</ng-template>

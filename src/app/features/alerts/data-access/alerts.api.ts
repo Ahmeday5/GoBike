@@ -17,7 +17,10 @@ import {
 export class AlertsApi {
   private readonly api = inject(ApiService);
 
-  oilAlerts(params: OilAlertsParams, silent = false): Observable<PagedResponse<MaintenanceAlertDto>> {
+  oilAlerts(
+    params: OilAlertsParams,
+    silent = false,
+  ): Observable<PagedResponse<MaintenanceAlertDto>> {
     return this.api
       .get<unknown>('maintenance/alerts', {
         params: { ...params },

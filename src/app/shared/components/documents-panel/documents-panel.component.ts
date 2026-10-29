@@ -11,6 +11,7 @@ import {
   DOCUMENT_CATEGORY,
   DocumentCategory,
   DocumentOwnerType,
+  enumMeta,
   enumOptions,
 } from '@core/constants/enums';
 import { HasPermissionDirective } from '../../directives/has-permission.directive';
@@ -62,6 +63,11 @@ export class DocumentsPanelComponent {
   protected readonly P = PERMISSIONS;
   protected readonly CATEGORY = DOCUMENT_CATEGORY;
   protected readonly categoryOptions = enumOptions(DOCUMENT_CATEGORY);
+
+  /** Tolerates categories the backend may add later. */
+  protected categoryIcon(category: string): string {
+    return enumMeta(DOCUMENT_CATEGORY, category).icon ?? 'file';
+  }
   protected readonly accept = DOCUMENT_ACCEPT;
 
   protected readonly docs = createResource(

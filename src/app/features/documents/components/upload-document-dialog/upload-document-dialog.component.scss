@@ -1,0 +1,35 @@
+/* Same drop zone as the shared documents panel. */
+.ud-drop {
+  display: grid;
+  justify-items: center;
+  gap: 0.375rem;
+  padding: 1.5rem 1rem;
+  border: 2px dashed var(--brd2);
+  border-radius: var(--rl);
+  background: var(--bg3);
+  color: var(--txt2);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-2),
+    background var(--dur-2);
+
+  app-icon {
+    color: var(--primary);
+  }
+
+  &:hover,
+  &--active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  &--has-file {
+    border-style: solid;
+    border-color: var(--gr);
+    background: var(--gr-l);
+
+    app-icon {
+      color: var(--gr);
+    }
+  }
+}

@@ -1,0 +1,40 @@
+.gd-stale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.gd-device {
+  display: inline-grid;
+  justify-items: center;
+  gap: 0.125rem;
+
+  &--off strong {
+    color: var(--txt3);
+  }
+}
+.gd-device__sub {
+  font-size: var(--fs-xs);
+}
+
+.gd-bike {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.gd-conn {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}

@@ -15,7 +15,12 @@
       </div>
       <div class="span-2">
         <label class="form-label" for="p-desc">الوصف</label>
-        <textarea id="p-desc" class="form-control" rows="2" formControlName="description"></textarea>
+        <textarea
+          id="p-desc"
+          class="form-control"
+          rows="2"
+          formControlName="description"
+        ></textarea>
       </div>
 
       <div class="span-2 pf-toggles">
@@ -50,8 +55,9 @@
         <p class="span-2 pf-note pf-note--warn">
           <app-icon name="alert" [size]="16" />
           <span>
-            توجد سياسة افتراضية واحدة فقط. عند الحفظ ستصبح هذه السياسة الافتراضية بدلًا من
-            «{{ currentDefault()?.name }}»، وستُطبَّق على كل موتوسيكل غير مرتبط بسياسة محددة.
+            توجد سياسة افتراضية واحدة فقط. عند الحفظ ستصبح هذه السياسة الافتراضية بدلًا من «{{
+              currentDefault()?.name
+            }}»، وستُطبَّق على كل موتوسيكل غير مرتبط بسياسة محددة.
           </span>
         </p>
       }
@@ -116,7 +122,8 @@
         />
         @if (form.hasError('thresholdOrder')) {
           <div class="invalid-feedback d-block" role="alert">
-            يجب أن تكون الحدود تصاعدية: التنبيه الأول &lt; التنبيه الثاني &lt; الحرج &lt; الحد الأقصى.
+            يجب أن تكون الحدود تصاعدية: التنبيه الأول &lt; التنبيه الثاني &lt; الحرج &lt; الحد
+            الأقصى.
           </div>
         }
       </div>

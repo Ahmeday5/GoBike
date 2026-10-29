@@ -97,6 +97,31 @@ export function parseRecipients(raw: unknown): AlertRecipient[] {
   return RECIPIENT_CHOICES.filter((r) => found.has(r));
 }
 
+/** A listed policy → full save body (for quick actions such as "make default"). */
+export function policyToRequest(
+  p: MaintenancePolicyDto,
+  changes: Partial<SaveMaintenancePolicyRequest> = {},
+): SaveMaintenancePolicyRequest {
+  return {
+    name: p.name,
+    description: p.description ?? null,
+    isDefault: !!p.isDefault,
+    isActive: p.isActive ?? true,
+    firstWarningKm: p.firstWarningKm ?? POLICY_DEFAULTS.firstWarningKm,
+    secondWarningKm: p.secondWarningKm ?? POLICY_DEFAULTS.secondWarningKm,
+    criticalKm: p.criticalKm ?? POLICY_DEFAULTS.criticalKm,
+    maxKm: p.maxKm ?? POLICY_DEFAULTS.maxKm,
+    overdueFinePerKm: p.overdueFinePerKm ?? 0,
+    firstWarningRecipients: serializeRecipients(parseRecipients(p.firstWarningRecipients)),
+    secondWarningRecipients: serializeRecipients(parseRecipients(p.secondWarningRecipients)),
+    criticalRecipients: serializeRecipients(parseRecipients(p.criticalRecipients)),
+    overdueRecipients: serializeRecipients(parseRecipients(p.overdueRecipients)),
+    criticalReminderIntervalHours: p.criticalReminderIntervalHours ?? 24,
+    notifyOnlyHighestWhenSkipping: p.notifyOnlyHighestWhenSkipping ?? true,
+    ...changes,
+  };
+}
+
 /** Recipients list → the comma-separated flags string the API expects. */
 export function serializeRecipients(list: readonly string[]): string {
   const clean = RECIPIENT_CHOICES.filter((r) => list.includes(r));

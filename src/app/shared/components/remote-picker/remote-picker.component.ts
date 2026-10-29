@@ -146,6 +146,7 @@ export class RemotePickerComponent implements ControlValueAccessor {
     this.chosen.set(null);
     this.value.set(null);
     this.onChange(null);
+    this.onTouched();
     this.picked.emit(null);
   }
 

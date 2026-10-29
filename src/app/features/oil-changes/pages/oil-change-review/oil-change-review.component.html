@@ -89,7 +89,7 @@
           </div>
           <div>
             <dt>قراءة العدّاد عند الرفع</dt>
-            <dd class="ltr">{{ sub.odometerKmAtSubmit != null ? (sub.odometerKmAtSubmit | km) : '—' }}</dd>
+            <dd class="ltr">{{ sub.odometerKmAtSubmit | km }}</dd>
           </div>
           <div>
             <dt>ملف الفيديو</dt>
@@ -139,7 +139,7 @@
                 <app-icon name="alert" [size]="22" />
                 <div>
                   <span class="rv__fine-label">الغرامة المتوقعة عند القبول</span>
-                  @if (f.amount != null) {
+                  @if (f.amount !== null) {
                     <strong class="amount amount--debt rv__fine-amount">{{ f.amount | money }}</strong>
                     <p>
                       <span class="ltr">{{ f.overKm | num }}</span> كم زيادة ×

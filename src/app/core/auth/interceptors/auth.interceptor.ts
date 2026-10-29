@@ -35,10 +35,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.getAccessToken();
 
-  // Proactively refresh if the token is expired or about to expire.
+  // Proactively refresh if the token is missing (it lives in memory, so a
+  // reload starts without one), expired or about to expire.
   // `refreshToken()` is shared across concurrent callers so N startup
   // requests all hitting this path still produce only one network round-trip.
-  if (token && isJwtExpired(token, EXPIRY_BUFFER_MS)) {
+  if (token ? isJwtExpired(token, EXPIRY_BUFFER_MS) : auth.isLoggedIn()) {
     return auth.refreshToken().pipe(
       switchMap((tokens) => next(withAuthHeader(req, tokens.accessToken))),
       catchError((err) => throwError(() => err)),
